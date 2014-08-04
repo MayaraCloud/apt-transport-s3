@@ -1,0 +1,36 @@
+# apt-transport-s3
+
+### Table of Contents
+1. [License & Copyright](#license & copyright)
+2. [Requirements](#requirements)
+3. [Configuration](#configuration)
+3. [Usage](#usage)
+
+## License & Copyright
+    # Copyright (C) 2014 Marcin Kulisz
+    #
+    # This program is free software; you can redistribute it and/or modify
+    # it under the terms of the GNU General Public License as published by
+    # the Free Software Foundation; either version 2 of the License, or
+    # (at your option) any later version.
+
+    # This program is distributed in the hope that it will be useful,
+    # but WITHOUT ANY WARRANTY; without even the implied warranty of
+    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    # GNU General Public License for more details.
+
+    # You should have received a copy of the GNU General Public License
+    # along with this program; if not, write to the Free Software
+    # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
+
+
+## Requirements
+* python >= 3.2
+* docopt
+
+On Debian below command should suffice to download all required dependencies:
+`apt-get install python3 python3-docopt`
+
+## Configuration
+~/.aws/config or IAM role can provide credentials required for using privately
+held apt repositories.
