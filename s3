@@ -208,9 +208,8 @@ class S3_method(object):
     def fetch(self, msg):
         self.uri = msg['URI']
         self.uri_parsed = urlparse.urlparse(self.uri)
-        self.uri_updated = 'https://' + urlparse.urljoin(
-            self.uri_parsed.netloc,
-            self.uri_parsed.path)
+        self.uri_updated = 'https://' + self.uri_parsed.netloc +\
+            self.uri_parsed.path
         self.filename = msg['Filename']
 
         response = self.iam.urlopen(self.uri_updated)
