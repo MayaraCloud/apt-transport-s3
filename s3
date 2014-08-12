@@ -21,6 +21,8 @@ import hashlib
 import hmac
 import json
 import sys
+import os
+from configobj import ConfigObj
 
 
 class AWSCredentials(object):
@@ -32,6 +34,7 @@ class AWSCredentials(object):
         host = 'http://169.254.169.254'
         path = '/latest/meta-data/iam/security-credentials/'
         self.meta_data_uri = urlparse.urljoin(host, path)
+
 
     def __get_role(self):
         # Read IAM role from AWS metadata store
@@ -49,6 +52,26 @@ class AWSCredentials(object):
         finally:
             if response:
                 response.close()
+
+
+    def __load_config():
+        """
+        Loading config file from predefined location.
+        Example config file content:
+            AccessKeyId = mykey
+            SecretAccessKey = mysecretkey
+            Token = have_to_figure_this_out
+        """
+        _CONF_FILE = '/etc/apt/s3auth.conf'
+
+        # Checking if 'file' exists, if it does read it
+        if os.path.isfile(os.path.expanduser(_CONF_FILE)):
+            config = ConfigObj(os.path.expanduser(_CONF_FILE))
+        else:
+            raise Exception("Config file: %s doesn't exist" % _CONF_FILE)
+
+        return config
+
 
     def get_credentials(self):
         """
@@ -70,6 +93,8 @@ class AWSCredentials(object):
                 raise Exception("URL error reason: " % e.reason)
             elif hasattr(e, 'code'):
                 raise Exception("Server error code: " % e.code)
+        else:
+            data = self.__load_config()
         finally:
             if response:
                 response.close()
@@ -77,6 +102,7 @@ class AWSCredentials(object):
         self.access_key = data['AccessKeyId']
         self.secret_key = data['SecretAccessKey']
         self.token = data['Token']
+
 
     def sign(self, request, timeval=None):
         """
