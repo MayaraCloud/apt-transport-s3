@@ -207,14 +207,6 @@ class S3_method(object):
             s = line.split(":", 1)
             result[s[0]] = s[1].strip()
 
-    def __dict2msg(self, msg):
-        """Convert dictionary to http like message"""
-        result = ""
-        for item in msg.keys():
-            if msg[item] is not None:
-                result += item + ": " + msg[item] + "\n"
-        return result
-
     def send(self, code, headers):
         message = APTMessage(code, headers)
         sys.stdout.write(message.encode())
