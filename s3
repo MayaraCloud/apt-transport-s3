@@ -131,19 +131,55 @@ class AWSCredentials(object):
         return request
 
 
+class APTMessage(object):
+    MESSAGE_CODES = {
+        100: 'Capabilities',
+        102: 'Status',
+        200: 'URI Start',
+        201: 'URI Done',
+        400: 'URI Failure',
+        600: 'URI Acquire',
+        601: 'Configuration',
+    }
+
+    def __init__(self, code, headers):
+        self.code = code
+        self.headers = headers
+
+    def process(self, lines):
+        status_line = lines.pop(0)
+        self.code = int(status_line.split()[0])
+        self.headers = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            parts = [p.strip() for p in line.split(':', 1)]
+            if len(parts) != 2:
+                continue
+            self.headers.append(parts)
+        return self(code, headers)
+
+    def encode(self):
+        result = '{0} {1}\n'.format(self.code, self.MESSAGE_CODES[self.code])
+        for item in self.headers.keys():
+            if self.headers[item] is not None:
+                result += '{0}: {1}\n'.format(item, self.headers[item])
+        return result + '\n'
+
+
 class S3_method(object):
     __eof = False
 
     def __init__(self):
         self.iam = AWSCredentials()
         self.iam.get_credentials()
-        print "100 Capabilities\nVersion: 1.0\nSingle-Instance: true\n\n",
+        self.send_capabilities()
 
     def fail(self, message='Failed'):
-        self.uri_failure({'URI': self.uri,
-                          'Message': message})
+        self.send_uri_failure({'URI': self.uri, 'Message': message})
 
-    def __get_next_msg(self):
+    def _read_message(self):
         """
         Apt uses for communication with its methods the text protocol similar
         to http. This function parses the protocol messages from stdin.
@@ -179,27 +215,34 @@ class S3_method(object):
                 result += item + ": " + msg[item] + "\n"
         return result
 
-    def status(self, **kwargs):
-        print "102 Status\n%s\n" % self.__dict2msg(kwargs),
+    def send(self, code, headers):
+        message = APTMessage(code, headers)
+        sys.stdout.write(message.encode())
 
-    def uri_start(self, msg):
-        print "200 URI Start\n%s\n" % self.__dict2msg(msg),
+    def send_capabilities(self):
+        self.send(100, {'Version': '1.0', 'Single-Instance': 'true'})
 
-    def uri_done(self, msg):
-        print "201 URI Done\n%s\n" % self.__dict2msg(msg),
+    def send_status(self, headers):
+        self.send(102, headers)
 
-    def uri_failure(self, msg):
-        print "400 URI Failure\n%s\n" % self.__dict2msg(msg),
+    def send_uri_start(self, headers):
+        self.send(200, headers)
+
+    def send_uri_done(self, headers):
+        self.send(201, headers)
+
+    def send_uri_failure(self, headers):
+        self.send(400, headers)
 
     def run(self):
         """Loop through requests on stdin"""
         while True:
-            msg = self.__get_next_msg()
-            if msg is None:
+            message = self._read_message()
+            if message is None:
                 return 0
-            if msg['_number'] == 600:
+            if message['_number'] == 600:
                 try:
-                    self.fetch(msg)
+                    self.fetch(message)
                 except Exception, e:
                     self.fail(e.__class__.__name__ + ": " + str(e))
             else:
@@ -213,10 +256,10 @@ class S3_method(object):
         self.filename = msg['Filename']
 
         response = self.iam.urlopen(self.uri_updated)
-        self.status(URI=self.uri, Message='Waiting for headers')
+        self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
 
         if response.code != 200:
-            self.uri_failure({
+            self.send_uri_failure({
                 'URI': self.uri,
                 'Message': str(response.code + '  ' + response.msg),
                 'FailReason': 'HttpError' + str(response.code)})
@@ -227,7 +270,7 @@ class S3_method(object):
             response.close()
             return
 
-        self.uri_start({
+        self.send_uri_start({
             'URI': self.uri,
             'Size': response.headers.getheader('content-length'),
             'Last-Modified': response.headers.getheader('last-modified')})
@@ -245,7 +288,7 @@ class S3_method(object):
         response.close()
         f.close()
 
-        self.uri_done({
+        self.send_uri_done({
             'URI': self.uri,
             'Filename': self.filename,
             'Size': response.headers.getheader('content-length'),
