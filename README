@@ -27,5 +27,13 @@
 ## Requirements
 
 ## Configuration
-/etc/apt/auth.conf or IAM role can provide credentials required for using privately
-held apt repositories.
+/etc/apt/auth.conf or <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">IAM role</a> 
+can provide credentials required for using private apt repositories.
+
+## Usage
+
+Install the .deb package from the releases page.  The bucket repo should be specified using an s3:// prefix, for example:
+
+`deb s3://aptbucketname.s3.amazonaws.com/repo/ trusty main contrib non-free`
+
+
