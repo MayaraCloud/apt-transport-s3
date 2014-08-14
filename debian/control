@@ -1,0 +1,22 @@
+Source: apt-transport-s3
+Section: admin
+Priority: optional
+Maintainer: Marcin Kulisz (kuLa) <debian@kulisz.net>
+Uploaders: David Watson <dwatson@debian.org>
+Build-Depends: debhelper (>= 9), python-all, python, python-setuptool
+Standards-Version: 3.9.5
+X-Python-Version: >= 2.7
+Homepage: https://github.com/BashtonLtd/apt-transport-s3
+Vcs-Git: https://github.com/BashtonLtd/apt-transport-s3.git
+Vcs-Browser: https://github.com/BashtonLtd/apt-transport-s3
+
+Package: apt-transport-s3
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: APT transport for privately held AWS S3 repositories
+ This package contains the APT AWS S3 transport. It makes possible to fetch
+ files from repositories privately held on AWS S3.
+ .
+ To start using S3 based repo it's enough to have IAM role on the server and to
+ add line similar to the below to apt sources.list (more information in 'man
+ apt-transport-s3'): deb s3://s3.amazonaws.com/BUCKETNAME wheezy main

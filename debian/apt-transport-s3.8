@@ -1,0 +1,49 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" (C) Copyright 2014 Marcin Kulisz (kuLa) <marcin@bashton.com>,
+.\"
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH APT-TRANSPORT-S3 8 "August 14, 2014"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH DESCRIPTION
+apt-transport-s3 \- it's a package which contains apt transport ('plugin')
+allowing apt to fetch files stored in private repositories held on AWS S3.
+
+.SH AWS Credentials
+To access repositories held on S3 it is compulsory to have correct permissions
+into the bucket where repository is located and those permissions have to be
+reflected in at least one of below two places.
+
+.B IAM Roles
+default place where S3 transport is looking for credentials allowing for
+fetching files from S3 bucket
+
+.B /etc/apt/s3auth.conf
+credentials configuration file in ini format without section headers
+
+.SH URI format
+URI format is in standard apt format only difference with S3 transport is that
+instead of HTTP(s), cdrom or FTP protocol
+.B s3
+should be used
+.br
+ex.
+.IR "deb s3://bucket_name.s3.amazonaws.com/ testing main contrib non-free"
+
+.PP
+.SH EXAMPLE /etc/apt/s3auth.conf
+ AccessKeyId = myaccesskey
+ SecretAccessKey = mysecrectkey
+ Token = mytoken

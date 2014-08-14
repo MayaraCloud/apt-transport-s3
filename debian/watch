@@ -1,0 +1,4 @@
+version=3
+
+opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/apt-transport-s3-$1\.tar\.gz/ \
+  https://github.com/andsens/apt-transport-s3/tags .*/v?(\d\S*)\.tar\.gz

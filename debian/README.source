@@ -1,0 +1,27 @@
+apt-transport-s3 for Debian
+-----------------------
+
+The apt-transport-s3 source is obtained from
+<https://github.com/BashtonLtd/apt-transport-s3> by the release tag.
+The Debian packaging tracks the latest tarball from the above url.
+
+The apt-transport-s3 package source is maintained within above github repository
+on Debian branch.
+
+  * 'master' branch is where we're keeping source code of apt-transport-s3
+  * The 'debian' branch is a branch where we're keeping Debian package specific
+    files and merging in (with --no-ff) 'master' branch to build packages.
+    ** There are no Debian specific patches as package mainainters are also
+      the upstream
+  * We carry upstream's tags in 'master' branch without any additional prefixes
+    e.g: v1.0.1
+  * We prefix our tags with 'debian/' e.g. debian/1.0.1-1
+    ** experimental releases are prefixed 'debian/experimental'
+      e.g. debian/experimental/4.0-1
+    ** Debian tagging should be done after package had been successfully
+      uploaded to Debian repository (to avoid having tags for debs which doesn't
+      exist in the archive)
+
+Information how to use gbp work flow following liks may be useful:
+https://honk.sigxcpu.org/piki/development/debian_packages_in_git/
+https://wiki.debian.org/PackagingWithGit

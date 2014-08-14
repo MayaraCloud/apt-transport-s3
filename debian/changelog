@@ -1,0 +1,5 @@
+apt-transport-s3 (1.0.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #756022)
+
+ -- Marcin Kulisz (kuLa) <marcin@bashton.com>  Thu, 14 Aug 2014 08:43:59 +0100
