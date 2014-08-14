@@ -13,8 +13,9 @@ on Debian branch.
     files and merging in (with --no-ff) 'master' branch to build packages.
     ** There are no Debian specific patches as package mainainters are also
       the upstream
-  * We carry upstream's tags in 'master' branch without any additional prefixes
-    e.g: v1.0.1
+  * We carry upstream's tags in 'debian' branch prefixed with 'upstream/'
+    applied on master merge into debian baranch (with --no-ff)
+    ex.: upstream/1.0.1
   * We prefix our tags with 'debian/' e.g. debian/1.0.1-1
     ** experimental releases are prefixed 'debian/experimental'
       e.g. debian/experimental/4.0-1

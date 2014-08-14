@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: apt-transport-s3
-Source: <url://example.com>
+Source: https://github.com/BashtonLtd/apt-transport-s3
 
 Files: *
 Copyright: 2014 Marcin Kulisz <marcin@bashton.com>
