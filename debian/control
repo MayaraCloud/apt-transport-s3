@@ -12,7 +12,7 @@ Vcs-Browser: https://github.com/BashtonLtd/apt-transport-s3
 
 Package: apt-transport-s3
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${python:Depends}, apt
 Description: APT transport for privately held AWS S3 repositories
  This package contains the APT AWS S3 transport. It makes possible to fetch
  files from repositories privately held on AWS S3.
