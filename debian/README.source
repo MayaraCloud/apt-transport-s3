@@ -9,8 +9,8 @@ The apt-transport-s3 package source is maintained within above github repository
 on Debian branch.
 
   * 'master' branch is where we're keeping source code of apt-transport-s3
-  * The 'debian' branch is a branch where we're keeping Debian package specific
-    files and merging in (with --no-ff) 'master' branch to build packages.
+  * The 'debian/*' branchs are for keeping Debian package specific files (per
+    suit) and merging in (with --no-ff) from 'master' branch to build packages.
     ** There are no Debian specific patches as package mainainters are also
       the upstream
   * We carry upstream's tags in 'debian' branch prefixed with 'upstream/'
