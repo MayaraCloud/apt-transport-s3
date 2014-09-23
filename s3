@@ -273,7 +273,12 @@ class S3_method(object):
             self.uri_parsed.path
         self.filename = msg['Filename']
 
-        response = self.iam.urlopen(self.uri_updated)
+        try:
+            response = self.iam.urlopen(self.uri_updated, None, 30)
+        except URLError as e:
+            print("URL timeout")
+        except socket.timeout:
+            print("Socket timeout")
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
 
         if response.code != 200:
