@@ -276,9 +276,9 @@ class S3_method(object):
         try:
             response = self.iam.urlopen(self.uri_updated, None, 30)
         except URLError as e:
-            print("URL timeout")
+            self.fail("URL timeout")
         except socket.timeout:
-            print("Socket timeout")
+            self.fail("Socket timeout")
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
 
         if response.code != 200:
