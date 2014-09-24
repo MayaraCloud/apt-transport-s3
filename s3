@@ -24,8 +24,6 @@ import sys
 import os
 from configobj import ConfigObj
 
-import syslog
-
 class AWSCredentials(object):
     """
     Class for dealing with IAM role credentials from meta-data server and later
