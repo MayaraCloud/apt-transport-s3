@@ -24,6 +24,7 @@ import sys
 import os
 from configobj import ConfigObj
 
+import syslog
 
 class AWSCredentials(object):
     """
@@ -46,9 +47,9 @@ class AWSCredentials(object):
             self.iamrole = response.read()
         except urllib2.URLError as e:
             if hasattr(e, 'reason'):
-                raise Exception("URL error reason: " % e.reason)
+                raise Exception("URL error reason: %s" % e.reason)
             elif hasattr(e, 'code'):
-                raise Exception("Server error code: " % e.code)
+                raise Exception("Server error code: %s" % e.code)
         finally:
             if response:
                 response.close()
