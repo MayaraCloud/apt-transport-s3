@@ -62,7 +62,7 @@ class AWSCredentials(object):
         Example config file content:
             AccessKeyId = mykey
             SecretAccessKey = mysecretkey
-            Token = have_to_figure_this_out
+            Token = '' # this can/have to be empty
         """
         _CONF_FILE = '/etc/apt/s3auth.conf'
 
@@ -154,9 +154,9 @@ class AWSCredentials(object):
         try:
             return urllib2.urlopen(self._request(url), None, 30)
         except urllib2.URLError as e:
-            self.fail("URL timeout")
+            Exception("URL timeout")
         except urllib2.socket.timeout:
-            self.fail("Socket timeout")
+            Exception("Socket timeout")
 
     def _request(self, url):
         request = urllib2.Request(url)
