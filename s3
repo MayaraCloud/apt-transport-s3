@@ -26,6 +26,7 @@ from configobj import ConfigObj
 
 import syslog
 
+
 class AWSCredentials(object):
     """
     Class for dealing with IAM role credentials from meta-data server and later
@@ -35,7 +36,6 @@ class AWSCredentials(object):
         host = 'http://169.254.169.254'
         path = '/latest/meta-data/iam/security-credentials/'
         self.meta_data_uri = urlparse.urljoin(host, path)
-
 
     def __get_role(self):
         # Read IAM role from AWS metadata store
@@ -48,13 +48,12 @@ class AWSCredentials(object):
         except urllib2.URLError as e:
             if hasattr(e, 'reason'):
                 raise Exception("URL error reason: %s, probable cause is that\
-                        you don't have IAM role on this machine" % e.reason)
+ you don't have IAM role on this machine" % e.reason)
             elif hasattr(e, 'code'):
                 raise Exception("Server error code: %s" % e.code)
         finally:
             if response:
                 response.close()
-
 
     def __load_config(self):
         """
@@ -74,7 +73,6 @@ class AWSCredentials(object):
             raise Exception("Config file: %s doesn't exist" % _CONF_FILE)
             syslog.syslog("Config file: %s doesn't exist" % _CONF_FILE)
 
-
     def get_credentials(self):
         """
         Read IAM credentials from AWS metadata store.
@@ -88,7 +86,7 @@ class AWSCredentials(object):
         except:
             pass
 
-        if data == None:
+        if data is None:
             self.__get_role()
             request = urllib2.Request(
                 urlparse.urljoin(self.meta_data_uri, self.iamrole)
@@ -111,7 +109,6 @@ class AWSCredentials(object):
         self.access_key = data['AccessKeyId']
         self.secret_key = data['SecretAccessKey']
         self.token = data['Token']
-
 
     def sign(self, request, timeval=None):
         """
