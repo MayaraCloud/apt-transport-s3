@@ -43,7 +43,7 @@ class AWSCredentials(object):
 
         response = None
         try:
-            response = urllib2.urlopen(request, None, 30)
+            response = urllib2.urlopen(request, None, 5)
             self.iamrole = response.read()
         except urllib2.URLError as e:
             if hasattr(e, 'reason'):
@@ -150,7 +150,12 @@ class AWSCredentials(object):
 
     def urlopen(self, url, **kwargs):
         """urlopen(url) open the remote file and return a file object."""
-        return urllib2.urlopen(self._request(url))
+        try:
+            return urllib2.urlopen(self._request(url), None, 30)
+        except urllib2.URLError as e:
+            self.fail("URL timeout")
+        except urllib2.socket.timeout:
+            self.fail("Socket timeout")
 
     def _request(self, url):
         request = urllib2.Request(url)
@@ -281,12 +286,7 @@ class S3_method(object):
             self.uri_parsed.path
         self.filename = msg['Filename']
 
-        try:
-            response = self.iam.urlopen(self.uri_updated, None, 30)
-        except URLError as e:
-            self.fail("URL timeout")
-        except socket.timeout:
-            self.fail("Socket timeout")
+        response = self.iam.urlopen(self.uri_updated)
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
 
         if response.code != 200:
