@@ -47,7 +47,8 @@ class AWSCredentials(object):
             self.iamrole = response.read()
         except urllib2.URLError as e:
             if hasattr(e, 'reason'):
-                raise Exception("URL error reason: %s" % e.reason)
+                raise Exception("URL error reason: %s, probable cause is that\
+                        you don't have IAM role on this machine" % e.reason)
             elif hasattr(e, 'code'):
                 raise Exception("Server error code: %s" % e.code)
         finally:
