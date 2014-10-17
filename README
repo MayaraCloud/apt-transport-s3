@@ -6,6 +6,11 @@
 3. [Configuration](#configuration)
 3. [Usage](#usage)
 
+## apt-transport-s3
+Allow to have a privately hosted apt repository on S3. Access keys are read from
+`/etc/apt/s3auth.conf` file or IAM role if machine is hosted on AWS or has
+access to AWS metadata server on 169.254.169.254.
+
 ## License & Copyright
     # Copyright (C) 2014 Bashton Ltd.
     #
@@ -25,14 +30,25 @@
 
 
 ## Requirements
+### Additional package dependencies (except installed by default in Debian)
+1. python-configobj
 
 ## Configuration
-/etc/apt/auth.conf or <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">IAM role</a> 
+/etc/apt/s3auth.conf or <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">IAM role</a>
 can provide credentials required for using private apt repositories.
 
-## Usage
+Example of s3auth.conf file:
+```
+AccessKeyId = myaccesskey
+SecretAccessKey = mysecretaccesskey
+Token = ''
+```
 
-Install the .deb package from the releases page.  The bucket repo should be specified using an s3:// prefix, for example:
+Token should be empty string.
+
+## Usage
+Install the .deb package from the releases page.  The bucket repo should be
+specified using an s3:// prefix, for example:
 
 `deb s3://aptbucketname.s3.amazonaws.com/repo/ trusty main contrib non-free`
 
