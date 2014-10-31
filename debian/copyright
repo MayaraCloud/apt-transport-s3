@@ -5,7 +5,7 @@ Source: https://github.com/BashtonLtd/apt-transport-s3
 Files: *
 Copyright: 2014 Marcin Kulisz <marcin@bashton.com>
            2014 David Watson <david@bashton.com>
-License: GPLv2+
+License: GPL-2+
  This program is free software; you can redistribute it
  and/or modify it under the terms of the GNU General Public
  License as published by the Free Software Foundation; either
