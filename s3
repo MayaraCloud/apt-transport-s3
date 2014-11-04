@@ -21,6 +21,10 @@ import hashlib
 import hmac
 import json
 import sys
+import os
+from configobj import ConfigObj
+
+import syslog
 
 
 class AWSCredentials(object):
@@ -39,16 +43,35 @@ class AWSCredentials(object):
 
         response = None
         try:
-            response = urllib2.urlopen(request)
+            response = urllib2.urlopen(request, None, 5)
             self.iamrole = response.read()
         except urllib2.URLError as e:
             if hasattr(e, 'reason'):
-                raise Exception("URL error reason: " % e.reason)
+                raise Exception("URL error reason: %s, probable cause is that\
+ you don't have IAM role on this machine" % e.reason)
             elif hasattr(e, 'code'):
-                raise Exception("Server error code: " % e.code)
+                raise Exception("Server error code: %s" % e.code)
         finally:
             if response:
                 response.close()
+
+    def __load_config(self):
+        """
+        Loading config file from predefined location.
+        Example config file content:
+            AccessKeyId = mykey
+            SecretAccessKey = mysecretkey
+            Token = '' # this can/have to be empty
+        """
+        _CONF_FILE = '/etc/apt/s3auth.conf'
+
+        # Checking if 'file' exists, if it does read it
+        if os.path.isfile(os.path.expanduser(_CONF_FILE)):
+            config = ConfigObj(os.path.expanduser(_CONF_FILE))
+            return config
+        else:
+            raise Exception("Config file: %s doesn't exist" % _CONF_FILE)
+            syslog.syslog("Config file: %s doesn't exist" % _CONF_FILE)
 
     def get_credentials(self):
         """
@@ -56,23 +79,32 @@ class AWSCredentials(object):
         Note: This method should be explicitly called after constructing new
             object, as in 'explicit is better than implicit'.
         """
-        self.__get_role()
-        request = urllib2.Request(
-            urlparse.urljoin(self.meta_data_uri, self.iamrole)
-            )
+        data = None
 
-        response = None
         try:
-            response = urllib2.urlopen(request)
-            data = json.loads(response.read())
-        except urllib2.URLError as e:
-            if hasattr(e, 'reason'):
-                raise Exception("URL error reason: " % e.reason)
-            elif hasattr(e, 'code'):
-                raise Exception("Server error code: " % e.code)
-        finally:
-            if response:
-                response.close()
+            data = self.__load_config()
+        except:
+            pass
+
+        if data is None:
+            self.__get_role()
+            request = urllib2.Request(
+                urlparse.urljoin(self.meta_data_uri, self.iamrole)
+                )
+
+            response = None
+
+            try:
+                response = urllib2.urlopen(request, None, 30)
+                data = json.loads(response.read())
+            except urllib2.URLError as e:
+                if hasattr(e, 'reason'):
+                    raise Exception("URL error reason: %s" % e.reason)
+                elif hasattr(e, 'code'):
+                    raise Exception("Server error code: %s" % e.code)
+            finally:
+                if response:
+                    response.close()
 
         self.access_key = data['AccessKeyId']
         self.secret_key = data['SecretAccessKey']
@@ -116,7 +148,12 @@ class AWSCredentials(object):
 
     def urlopen(self, url, **kwargs):
         """urlopen(url) open the remote file and return a file object."""
-        return urllib2.urlopen(self._request(url))
+        try:
+            return urllib2.urlopen(self._request(url), None, 30)
+        except urllib2.URLError as e:
+            Exception("URL timeout")
+        except urllib2.socket.timeout:
+            Exception("Socket timeout")
 
     def _request(self, url):
         request = urllib2.Request(url)
