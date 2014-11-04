@@ -1,4 +1,4 @@
-apt-transport-s3 (1.1.0-1) unstable; urgency=low
+apt-transport-s3 (1.1.0-2) unstable; urgency=low
 
   * Initial release (Closes: #756022)
 
