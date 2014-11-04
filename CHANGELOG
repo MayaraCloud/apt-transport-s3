@@ -1,0 +1,4 @@
+2014-08-06 Marcin Kulisz <marcin@bashton.com>
+
+  * Initial release
+  * Operational s3 transport with IAM Roles present on the server
