@@ -1,3 +1,9 @@
+apt-transport-s3 (1.1.0-3) UNRELEASED; urgency=medium
+
+  * added missing (from binary) manpage
+
+ -- Marcin Kulisz (kuLa) <debian@kulisz.net>  Fri, 12 Dec 2014 12:00:37 +0000
+
 apt-transport-s3 (1.1.0-2) unstable; urgency=low
 
   * Initial release (Closes: #756022)
