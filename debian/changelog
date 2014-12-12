@@ -1,6 +1,7 @@
 apt-transport-s3 (1.1.0-3) UNRELEASED; urgency=medium
 
   * added missing (from binary) manpage
+  * bumping up standards-verion to 3.9.6
 
  -- Marcin Kulisz (kuLa) <debian@kulisz.net>  Fri, 12 Dec 2014 12:00:37 +0000
 
