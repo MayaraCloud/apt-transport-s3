@@ -286,11 +286,23 @@ class S3_method(object):
             else:
                 return 100
 
+    # We need to be able to quote specific characters to support S3
+    # lookups, something urllib and friends don't do easily
+    def quote(self, s, unsafe):
+        res = list(s)
+        for i in range(len(res)):
+            c = res[i]
+            if c in unsafe:
+                res[i] = '%%%02X' % ord(c)
+        return ''.join(res)
+
     def fetch(self, msg):
         self.uri = msg['URI']
         self.uri_parsed = urlparse.urlparse(self.uri)
+        # quote path for +, ~, and spaces
+        # see bugs.launchpad.net #1003633 and #1086997
         self.uri_updated = 'https://' + self.uri_parsed.netloc +\
-            self.uri_parsed.path
+            self.quote(self.uri_parsed.path, '+~ ')
         self.filename = msg['Filename']
 
         response = self.iam.urlopen(self.uri_updated)
