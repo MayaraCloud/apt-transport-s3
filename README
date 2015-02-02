@@ -56,4 +56,4 @@ if you need to use a proxy to connect to the internet you can specify this
 as an APT configuration directive (for example in
 /etc/apt/apt.conf.d/90apt-transport-s3)
 
-`s3::Proxy http://myproxy:3128`
+`s3::Proxy "http://myproxy:3128/";`
