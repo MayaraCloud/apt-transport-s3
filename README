@@ -51,3 +51,8 @@ Install the .deb package from the releases page.  The bucket repo should be
 specified using an s3:// prefix, for example:
 
 `deb s3://aptbucketname.s3.amazonaws.com/repo/ trusty main contrib non-free`
+
+if you need to use a proxy to connect to the internet you can specify this
+as an APT configuration directive (for example in /etc/apt/apt.conf.d/s3.conf)
+
+`s3::Proxy=http://myproxy:3182`
