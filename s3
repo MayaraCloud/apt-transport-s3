@@ -283,7 +283,7 @@ class S3_method(object):
             if message is None:
                 return 0
             if message['_number'] == 601:
-                try
+                try:
                     self.configure(message)
                 except Exception, e:
                     self.fail(e.__class__.__name__ + ": " + str(e))
