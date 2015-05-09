@@ -8,7 +8,7 @@ Build-Depends: debhelper (>= 5.0), libapt-pkg-dev (>= 0.7.23), cdbs, libcurl4-op
 
 Package: apt-transport-s3
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: python-configobj, ${shlibs:Depends}
 Description: an APT transport for communicating with Amazon S3
  This package contains the APT amazon s3 transport. It makes it possible to
  use
