@@ -79,3 +79,6 @@ from within Vagrant:
 cd /vagrant
 make deb
 ```
+
+the deb will be placed in `[cwd]/../apt-transport-s3[version].deb` - currently, there is no way to specifiy
+the output directory of dpkg-buildpackage

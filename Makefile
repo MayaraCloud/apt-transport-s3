@@ -5,12 +5,11 @@ DIRS:= src
 
 .PHONY: clean
 
-all:
-	clean
-	deb
+all: clean deb
 
 clean:
 	rm -rf debian/apt-transport-s3*
 
 deb:
 	dpkg-buildpackage -us -uc
+
