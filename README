@@ -76,6 +76,7 @@ vagrant ssh
 from within Vagrant:
 
 ```
+sudo -i
 cd /vagrant
 make deb
 ```
