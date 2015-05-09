@@ -37,7 +37,7 @@ access to AWS metadata server on 169.254.169.254.
 ## Building
 build dependencies (tested on Ubuntu 14.04 Trusty):
 ```
-[sudo] apt-get install libapt-pkg-dev libcurl4-openssl-dev
+[sudo] apt-get install libapt-pkg-dev libcurl4-openssl-dev dpkg-dev debhelper cdbs
 ```
 
 ```
