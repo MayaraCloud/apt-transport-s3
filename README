@@ -47,7 +47,7 @@ make deb
 will package the s3 apt verb into a debian package
 
 ## Configuration
-/etc/apt/s3auth.conf or [http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html](IAM role)
+/etc/apt/s3auth.conf or [IAM Role](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
 can provide credentials required for using private apt repositories.
 
 Example of s3auth.conf file:
