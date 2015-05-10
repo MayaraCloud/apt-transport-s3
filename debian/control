@@ -12,5 +12,5 @@ Depends: python-configobj, ${shlibs:Depends}
 Description: an APT transport for communicating with Amazon S3
  This package contains the APT amazon s3 transport. It makes it possible to
  use
- 'deb s3://BUCKET-NAME.s3.amazonaws.com/BUCKETNAME prod main'
+ 'deb s3://BUCKET-NAME.s3.amazonaws.com/REPO POOL main'
  type lines in your sources.list file using AWS IAM role permissions.
