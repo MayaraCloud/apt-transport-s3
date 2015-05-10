@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+# vim: tabstop=4 softtabstop=4 noexpandtab fileencoding=utf-8
+
+# Uncomment this to turn on verbose mode.
+# export DH_VERBOSE=1
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+
+DEB_DIR=$(CURDIR)/debian/apt-transport-s3
+
+configure/apt-transport-s3::
+	@echo "no configuration needed"
+
+build/apt-transport-s3::
+	@echo "no build needed"
+
+install/apt-transport-s3::
+	@cp $(CURDIR)/src/s3 $(DEB_DIR)/usr/lib/apt/methods/
+

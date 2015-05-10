@@ -1,0 +1,12 @@
+apt-transport-s3 (1.0.1) trusty; urgency=low
+
+  * Adding debian packaging
+
+ -- Erik Madrid <steven.erik.madrid@gmail.com>  Sat, 09 May 2015 16:28:00 -0500
+
+apt-transport-s3 (1.0.0) trusty; urgency=low
+
+  * Initial release
+  * Operational s3 transport with IAM Roles present on the server
+
+ -- Marcin Kulisz <marcin@bashton.com>  Wed, 04 Aug 2014 00:00:00 -0500

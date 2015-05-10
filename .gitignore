@@ -1,0 +1,7 @@
+*.deb
+.vagrant/
+
+debian/apt-transport-s3/
+debian/apt-transport-s3.*
+debian/compat
+debian/files

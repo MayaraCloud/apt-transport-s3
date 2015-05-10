@@ -1,0 +1,16 @@
+Source: apt-transport-s3
+Section: admin
+Priority: optional
+Maintainer: Marcin Kulisz <marcin@bashton.com>
+Homepage: https://github.com/BashtonLtd/apt-transport-s3
+Standards-Version: 3.7.3
+Build-Depends: debhelper (>= 5.0), libapt-pkg-dev (>= 0.7.23), cdbs, libcurl4-openssl-dev
+
+Package: apt-transport-s3
+Architecture: any
+Depends: python-configobj, ${shlibs:Depends}
+Description: an APT transport for communicating with Amazon S3
+ This package contains the APT amazon s3 transport. It makes it possible to
+ use
+ 'deb s3://BUCKET-NAME.s3.amazonaws.com/REPO POOL main'
+ type lines in your sources.list file using AWS IAM role permissions.

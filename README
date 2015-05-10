@@ -1,10 +1,11 @@
 # apt-transport-s3
 
 ### Table of Contents
-1. [License & Copyright](#license & copyright)
+1. [License & Copyright](#license--copyright)
 2. [Requirements](#requirements)
+4. [Building](#building)
 3. [Configuration](#configuration)
-3. [Usage](#usage)
+5. [Usage](#usage)
 
 ## apt-transport-s3
 Allow to have a privately hosted apt repository on S3. Access keys are read from
@@ -33,8 +34,20 @@ access to AWS metadata server on 169.254.169.254.
 ### Additional package dependencies (except installed by default in Debian)
 1. python-configobj
 
+## Building
+build dependencies (tested on Ubuntu 14.04 Trusty):
+```
+[sudo] apt-get install libapt-pkg-dev libcurl4-openssl-dev dpkg-dev debhelper cdbs
+```
+
+```
+make deb
+```
+
+will package the s3 apt method into a debian package
+
 ## Configuration
-/etc/apt/s3auth.conf or <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">IAM role</a>
+/etc/apt/s3auth.conf or [IAM Role](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
 can provide credentials required for using private apt repositories.
 
 Example of s3auth.conf file:
@@ -51,3 +64,22 @@ Install the .deb package from the releases page.  The bucket repo should be
 specified using an s3:// prefix, for example:
 
 `deb s3://aptbucketname.s3.amazonaws.com/repo/ trusty main contrib non-free`
+
+## Vagrant
+Vagrant can be used to build the debian package in non-native environments
+
+```
+vagrant up --provision
+vagrant ssh
+```
+
+from within Vagrant:
+
+```
+sudo -i
+cd /vagrant
+make deb
+```
+
+the deb will be placed in `[cwd]/../apt-transport-s3[version].deb` - currently, there is no way to specifiy
+the output directory of dpkg-buildpackage
