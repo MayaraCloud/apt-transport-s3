@@ -150,10 +150,19 @@ class AWSCredentials(object):
         """urlopen(url) open the remote file and return a file object."""
         try:
             return urllib2.urlopen(self._request(url), None, 30)
+        except urllib2.HTTPError as e:
+            # HTTPError is a "file like object" similar to what
+            # urllib2.urlopen returns, so return it and let caller
+            # deal with the error code
+            return e
+        # For other errors, throw an exception directly
         except urllib2.URLError as e:
-            Exception("URL timeout")
+            if hasattr(e, 'reason'):
+                raise Exception("URL error reason: %s" % e.reason)
+            elif hasattr(e, 'code'):
+                raise Exception("Server error code: %s" % e.code)
         except urllib2.socket.timeout:
-            Exception("Socket timeout")
+            raise Exception("Socket timeout")
 
     def _request(self, url):
         request = urllib2.Request(url)
@@ -277,11 +286,23 @@ class S3_method(object):
             else:
                 return 100
 
+    # We need to be able to quote specific characters to support S3
+    # lookups, something urllib and friends don't do easily
+    def quote(self, s, unsafe):
+        res = list(s)
+        for i in range(len(res)):
+            c = res[i]
+            if c in unsafe:
+                res[i] = '%%%02X' % ord(c)
+        return ''.join(res)
+
     def fetch(self, msg):
         self.uri = msg['URI']
         self.uri_parsed = urlparse.urlparse(self.uri)
+        # quote path for +, ~, and spaces
+        # see bugs.launchpad.net #1003633 and #1086997
         self.uri_updated = 'https://' + self.uri_parsed.netloc +\
-            self.uri_parsed.path
+            self.quote(self.uri_parsed.path, '+~ ')
         self.filename = msg['Filename']
 
         response = self.iam.urlopen(self.uri_updated)
@@ -290,7 +311,7 @@ class S3_method(object):
         if response.code != 200:
             self.send_uri_failure({
                 'URI': self.uri,
-                'Message': str(response.code + '  ' + response.msg),
+                'Message': str(response.code) + '  ' + response.msg,
                 'FailReason': 'HttpError' + str(response.code)})
             while True:
                 data = response.read(4096)
