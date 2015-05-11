@@ -1,8 +1,10 @@
-apt-transport-s3 (1.1.0-3) UNRELEASED; urgency=medium
+apt-transport-s3 (1.2.0-1) UNRELEASED; urgency=medium
 
   * added missing (from binary) manpage
   * bumping up standards-verion to 3.9.6
   * pointing VCS fields in d/control to the packaging branch for d/sid
+  * new upstream with patches for handling '+~ ' chars and modified error
+    handling for problematic URLs
 
  -- Marcin Kulisz (kuLa) <debian@kulisz.net>  Fri, 12 Dec 2014 12:00:37 +0000
 
