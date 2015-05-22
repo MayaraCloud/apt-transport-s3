@@ -6,6 +6,7 @@ apt-transport-s3 (1.2.0-1) UNRELEASED; urgency=medium
   * new upstream with patches for handling '+~ ' chars and modified error
     handling for problematic URLs
   * fixing dch
+  * fixed d/watch and added gpg sign handling
 
  -- Marcin Kulisz (kuLa) <debian@kulisz.net>  Fri, 12 Dec 2014 12:00:37 +0000
 
