@@ -143,7 +143,7 @@ class AWSCredentials(object):
             str(self.secret_key),
             str(sigstring),
             hashlib.sha1).digest()
-        signature = digest.encode('base64')
+        signature = digest.encode('base64').strip()
         return signature
 
     def urlopen(self, url, **kwargs):
