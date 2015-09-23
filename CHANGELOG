@@ -1,3 +1,8 @@
+2015-09-23 Marcin Kulisz <debian@kulisz.net>
+
+  * Fixing new line issue in Authorization header caused by more restrictive
+    urllib in python 2.7.10, thx to jensschroer (https://github.com/jensschroer)
+
 2015-01-09 Marcin Kulisz <marcin@bashton.com>
 
   * Fixing '+~ ' handling and making http errors more readable, thx for the

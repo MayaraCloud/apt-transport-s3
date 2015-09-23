@@ -172,7 +172,7 @@ class AWSCredentials(object):
             'Authorization', "AWS {0}:{1}".format(
                 self.access_key,
                 signature
-            )
+            ).rstrip()
         )
         return request
 
