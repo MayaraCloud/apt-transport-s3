@@ -5,6 +5,7 @@
 2. [Requirements](#requirements)
 3. [Configuration](#configuration)
 4. [Usage](#usage)
+5. [Contribution](#contribution)
 
 ## apt-transport-s3
 Allow to have a privately hosted apt repository on S3. Access keys are read from
@@ -51,3 +52,7 @@ Install the .deb package from the releases page.  The bucket repo should be
 specified using an s3:// prefix, for example:
 
 `deb s3://aptbucketname.s3.amazonaws.com/repo/ trusty main contrib non-free`
+
+## Contribution
+If you want to contribute a patch via PR please create it against development
+branch. Patches via email are welcome as well.
