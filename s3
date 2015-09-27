@@ -327,7 +327,7 @@ class S3_method(object):
 
         f = open(self.filename, "w")
         hash_sha256 = hashlib.sha256()
-        hash_sha512 = hashlib.sha256()
+        hash_sha512 = hashlib.sha512()
         hash_md5 = hashlib.md5()
         while True:
             data = response.read(4096)
