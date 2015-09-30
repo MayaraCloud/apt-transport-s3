@@ -143,7 +143,7 @@ class AWSCredentials(object):
             str(self.secret_key),
             str(sigstring),
             hashlib.sha1).digest()
-        signature = digest.encode('base64')
+        signature = digest.encode('base64').strip()
         return signature
 
     def urlopen(self, url, **kwargs):
@@ -172,7 +172,7 @@ class AWSCredentials(object):
             'Authorization', "AWS {0}:{1}".format(
                 self.access_key,
                 signature
-            )
+            ).rstrip()
         )
         return request
 
@@ -327,12 +327,14 @@ class S3_method(object):
 
         f = open(self.filename, "w")
         hash_sha256 = hashlib.sha256()
+        hash_sha512 = hashlib.sha512()
         hash_md5 = hashlib.md5()
         while True:
             data = response.read(4096)
             if not len(data):
                 break
             hash_sha256.update(data)
+            hash_sha512.update(data)
             hash_md5.update(data)
             f.write(data)
         response.close()
@@ -345,7 +347,8 @@ class S3_method(object):
             'Last-Modified': response.headers.getheader('last-modified'),
             'MD5-Hash': hash_md5.hexdigest(),
             'MD5Sum-Hash': hash_md5.hexdigest(),
-            'SHA256-Hash': hash_sha256.hexdigest()})
+            'SHA256-Hash': hash_sha256.hexdigest(),
+            'SHA512-Hash': hash_sha512.hexdigest()})
 
 if __name__ == '__main__':
     try:
