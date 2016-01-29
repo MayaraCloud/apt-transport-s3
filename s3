@@ -250,15 +250,19 @@ class S3_method(object):
                 return result
             if line == '\n':
                 return result
-            s = line.split(":", 1)
-            result[s[0]] = s[1].strip()
+            (item, value) = line.split(":", 1)
+            if not result.get(item):
+                result[item] = []
+            result[item].append(value.strip())
+        return result
 
     def send(self, code, headers):
         message = APTMessage(code, headers)
         sys.stdout.write(message.encode())
 
     def send_capabilities(self):
-        self.send(100, {'Version': '1.0', 'Single-Instance': 'true'})
+        self.send(100, {
+            'Version': '1.1', 'Single-Instance': 'true', 'Send-Config': 'true'})
 
     def send_status(self, headers):
         self.send(102, headers)
@@ -278,13 +282,27 @@ class S3_method(object):
             message = self._read_message()
             if message is None:
                 return 0
-            if message['_number'] == 600:
+            if message['_number'] == 601:
+                try:
+                    self.configure(message)
+                except Exception, e:
+                    self.fail(e.__class__.__name__ + ": " + str(e))
+            elif message['_number'] == 600:
                 try:
                     self.fetch(message)
                 except Exception, e:
                     self.fail(e.__class__.__name__ + ": " + str(e))
             else:
                 return 100
+
+    # configure
+    def configure(self, message):
+        for item in message['Config-Item']:
+            if item.startswith('Acquire::http::Proxy'):
+                (key, value) = item.split('=',1)
+                if key == 'Acquire::http::Proxy':
+                    os.environ['http_proxy'] = value
+                    os.environ['https_proxy'] = value
 
     # We need to be able to quote specific characters to support S3
     # lookups, something urllib and friends don't do easily
@@ -297,13 +315,13 @@ class S3_method(object):
         return ''.join(res)
 
     def fetch(self, msg):
-        self.uri = msg['URI']
+        self.uri = msg['URI'][0]
         self.uri_parsed = urlparse.urlparse(self.uri)
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
         self.uri_updated = 'https://' + self.uri_parsed.netloc +\
             self.quote(self.uri_parsed.path, '+~ ')
-        self.filename = msg['Filename']
+        self.filename = msg['Filename'][0]
 
         response = self.iam.urlopen(self.uri_updated)
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
