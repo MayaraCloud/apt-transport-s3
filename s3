@@ -298,13 +298,11 @@ class S3_method(object):
     # configure
     def configure(self, message):
         for item in message['Config-Item']:
-            if not item.startswith('s3'):
-                continue
-            conf = item.split('::',1)[1]
-            (key, value) = conf.split('=',1)
-            if key == 'Proxy':
-                os.environ['http_proxy'] = value
-                os.environ['https_proxy'] = value
+            if item.startswith('Acquire::http::Proxy'):
+                (key, value) = item.split('=',1)
+                if key == 'Acquire::http::Proxy':
+                    os.environ['http_proxy'] = value
+                    os.environ['https_proxy'] = value
 
     # We need to be able to quote specific characters to support S3
     # lookups, something urllib and friends don't do easily
