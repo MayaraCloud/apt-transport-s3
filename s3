@@ -13,6 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# https://github.com/BashtonLtd/apt-transport-s3
 
 import urllib2
 import urlparse
@@ -119,19 +121,15 @@ class AWSCredentials(object):
                              timeval or time.gmtime())
         request.add_header('Date', date)
         host = request.get_host()
+        url = request.get_full_url()
+        resource = request.get_selector() # Bucket convention #1: /bucket-name/
 
-        # TODO: bucket name finding is ugly, I should find a way to support
-        # both naming conventions: http://bucket.s3.amazonaws.com/ and
-        # http://s3.amazonaws.com/bucket/
-        try:
-            pos = host.find(".s3")
-            assert pos != -1
+
+        pos = host.find(".s3") # Bucket convention #2: bucket-name.s3.amazonaws.com
+        if pos != -1:
             bucket = host[:pos]
-        except:
-            raise Exception("Can't establish bucket name based on the hostname:\
-              %s" % host)
+            resource = "/" + bucket + resource
 
-        resource = "/%s%s" % (bucket, request.get_selector(), )
         amz_headers = 'x-amz-security-token:%s\n' % self.token
         sigstring = ("%(method)s\n\n\n%(date)s\n"
                      "%(canon_amzn_headers)s%(canon_amzn_resource)s") % ({
@@ -144,6 +142,7 @@ class AWSCredentials(object):
             str(sigstring),
             hashlib.sha1).digest()
         signature = digest.encode('base64').strip()
+
         return signature
 
     def urlopen(self, url, **kwargs):
@@ -172,7 +171,7 @@ class AWSCredentials(object):
             'Authorization', "AWS {0}:{1}".format(
                 self.access_key,
                 signature
-            ).rstrip()
+            )
         )
         return request
 
@@ -327,14 +326,12 @@ class S3_method(object):
 
         f = open(self.filename, "w")
         hash_sha256 = hashlib.sha256()
-        hash_sha512 = hashlib.sha512()
         hash_md5 = hashlib.md5()
         while True:
             data = response.read(4096)
             if not len(data):
                 break
             hash_sha256.update(data)
-            hash_sha512.update(data)
             hash_md5.update(data)
             f.write(data)
         response.close()
@@ -347,8 +344,7 @@ class S3_method(object):
             'Last-Modified': response.headers.getheader('last-modified'),
             'MD5-Hash': hash_md5.hexdigest(),
             'MD5Sum-Hash': hash_md5.hexdigest(),
-            'SHA256-Hash': hash_sha256.hexdigest(),
-            'SHA512-Hash': hash_sha512.hexdigest()})
+            'SHA256-Hash': hash_sha256.hexdigest()})
 
 if __name__ == '__main__':
     try:
