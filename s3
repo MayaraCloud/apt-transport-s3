@@ -161,8 +161,6 @@ class AWSCredentials(object):
 
         payload_hash = hashlib.sha256('').hexdigest()
 
-        sys.stderr.write("host: {} uri: {}\n".format(host, canonical_uri))
-
         request.add_header('x-amz-content-sha256', payload_hash)
 
         # Create a date for headers and the credential string
@@ -187,20 +185,14 @@ class AWSCredentials(object):
 
         canonical_request = request.get_method() + '\n' + canonical_uri + '\n' + canonical_querystring + '\n' + canonical_headers + '\n' + signed_headers + '\n' + payload_hash
 
-        sys.stderr.write("Canonical Request:\n{}\n".format(canonical_request))
-
         string_to_sign = algorithm + '\n' + amzdate + '\n' + credential_scope + '\n' + hashlib.sha256(
             canonical_request).hexdigest()
-
-        sys.stderr.write("String To Sign:\n{}\n".format(string_to_sign))
 
         signing_key = self.getSignatureKey(datestamp, 's3')
         signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
 
         authorization_header = algorithm + ' ' + 'Credential=' + self.access_key + '/' + credential_scope + ', ' + 'SignedHeaders=' + signed_headers + ', ' + 'Signature=' + signature
         request.add_header('Authorization', authorization_header)
-
-        sys.stderr.write("Request Header: {}\n".format(request.headers))
 
         return request
 
