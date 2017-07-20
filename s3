@@ -16,23 +16,21 @@
 
 import urllib2
 import urlparse
-import time
 import hashlib
 import hmac
 import json
 import sys
 import os
+import datetime
 from configobj import ConfigObj
-
-import syslog
-
 
 class AWSCredentials(object):
     """
     Class for dealing with IAM role credentials from meta-data server and later
     on to deal with boto/aws config provided keys
     """
-    def __init__(self):
+    def __init__(self, config_file=None):
+        self.conf_file = config_file
         host = 'http://169.254.169.254'
         path = '/latest/meta-data/iam/security-credentials/'
         self.meta_data_uri = urlparse.urljoin(host, path)
@@ -63,15 +61,13 @@ class AWSCredentials(object):
             SecretAccessKey = mysecretkey
             Token = '' # this can/have to be empty
         """
-        _CONF_FILE = '/etc/apt/s3auth.conf'
 
         # Checking if 'file' exists, if it does read it
-        if os.path.isfile(os.path.expanduser(_CONF_FILE)):
-            config = ConfigObj(os.path.expanduser(_CONF_FILE))
+        if os.path.isfile(os.path.expanduser(self.conf_file)):
+            config = ConfigObj(os.path.expanduser(self.conf_file))
             return config
         else:
-            raise Exception("Config file: %s doesn't exist" % _CONF_FILE)
-            syslog.syslog("Config file: %s doesn't exist" % _CONF_FILE)
+            raise Exception("Config file: %s doesn't exist" % self.conf_file)
 
     def get_credentials(self):
         """
@@ -79,14 +75,24 @@ class AWSCredentials(object):
         Note: This method should be explicitly called after constructing new
             object, as in 'explicit is better than implicit'.
         """
-        data = None
+        data = {}
 
         try:
             data = self.__load_config()
         except:
             pass
 
-        if data is None:
+        if data.get("AccessKeyId") is not None:
+            sys.stderr.write("Using config file for credentials\n")
+
+        if data.get("AccessKeyId") is None:
+            data['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID", None)
+            data['SecretAccessKey'] = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
+            data['Token'] = os.environ.get("AWS_SESSION_TOKEN", None)
+            if data.get("AccessKeyId") is not None:
+                sys.stderr.write("Using environment variables for credentials\n")
+
+        if data.get("AccessKeyId") is None:
             self.__get_role()
             request = urllib2.Request(
                 urlparse.urljoin(self.meta_data_uri, self.iamrole)
@@ -105,46 +111,23 @@ class AWSCredentials(object):
             finally:
                 if response:
                     response.close()
+            sys.stderr.write("Using metadata for credentials\n")
 
         self.access_key = data['AccessKeyId']
         self.secret_key = data['SecretAccessKey']
         self.token = data['Token']
+        self.region = data.get('Region', 'us-east-1')
+        sys.stderr.write("Region: {}\n".format(self.region))
 
-    def sign(self, request, timeval=None):
-        """
-        Attach a valid S3 signature to request.
-        request - instance of Request
-        """
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT",
-                             timeval or time.gmtime())
-        request.add_header('Date', date)
-        host = request.get_host()
+    def v4Sign(self, key, msg):
+        return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
-        # TODO: bucket name finding is ugly, I should find a way to support
-        # both naming conventions: http://bucket.s3.amazonaws.com/ and
-        # http://s3.amazonaws.com/bucket/
-        try:
-            pos = host.find(".s3")
-            assert pos != -1
-            bucket = host[:pos]
-        except:
-            raise Exception("Can't establish bucket name based on the hostname:\
-              %s" % host)
-
-        resource = "/%s%s" % (bucket, request.get_selector(), )
-        amz_headers = 'x-amz-security-token:%s\n' % self.token
-        sigstring = ("%(method)s\n\n\n%(date)s\n"
-                     "%(canon_amzn_headers)s%(canon_amzn_resource)s") % ({
-                         'method': request.get_method(),
-                         'date': request.headers.get('Date'),
-                         'canon_amzn_headers': amz_headers,
-                         'canon_amzn_resource': resource})
-        digest = hmac.new(
-            str(self.secret_key),
-            str(sigstring),
-            hashlib.sha1).digest()
-        signature = digest.encode('base64').strip()
-        return signature
+    def getSignatureKey(self, dateStamp, serviceName):
+        kDate = self.v4Sign(('AWS4' + self.secret_key).encode('utf-8'), dateStamp)
+        kRegion = self.v4Sign(kDate, self.region)
+        kService = self.v4Sign(kRegion, serviceName)
+        kSigning = self.v4Sign(kService, 'aws4_request')
+        return kSigning
 
     def urlopen(self, url, **kwargs):
         """urlopen(url) open the remote file and return a file object."""
@@ -165,15 +148,60 @@ class AWSCredentials(object):
             raise Exception("Socket timeout")
 
     def _request(self, url):
+        uri_parsed = urlparse.urlparse(url)
+        host = uri_parsed.netloc
+        pos = host.find(".s3")
+        bucket = host[:pos]
+        host = host[pos + 1:]
+
+        url = "{}://{}{}".format(uri_parsed.scheme, host, "/{}{}".format(bucket, uri_parsed.path))
         request = urllib2.Request(url)
+
+        canonical_uri = request.get_selector()
+
+        payload_hash = hashlib.sha256('').hexdigest()
+
+        sys.stderr.write("host: {} uri: {}\n".format(host, canonical_uri))
+
+        request.add_header('x-amz-content-sha256', payload_hash)
+
+        # Create a date for headers and the credential string
+        t = datetime.datetime.utcnow()
+        amzdate = t.strftime('%Y%m%dT%H%M%SZ')
+        datestamp = t.strftime('%Y%m%d')
+
+        request.add_header('x-amz-date', amzdate)
+
         request.add_header('x-amz-security-token', self.token)
-        signature = self.sign(request)
-        request.add_header(
-            'Authorization', "AWS {0}:{1}".format(
-                self.access_key,
-                signature
-            ).rstrip()
-        )
+
+        algorithm = 'AWS4-HMAC-SHA256'
+        credential_scope = datestamp + '/' + self.region + '/s3/aws4_request'
+        canonical_querystring = ''
+
+        canonical_headers = 'host:' + host + '\n' \
+                            + 'x-amz-content-sha256:' + payload_hash + '\n' \
+                            + 'x-amz-date:' + amzdate + '\n' \
+                            + 'x-amz-security-token:' + self.token + '\n'
+
+        signed_headers = 'host;x-amz-content-sha256;x-amz-date;x-amz-security-token'
+
+        canonical_request = request.get_method() + '\n' + canonical_uri + '\n' + canonical_querystring + '\n' + canonical_headers + '\n' + signed_headers + '\n' + payload_hash
+
+        sys.stderr.write("Canonical Request:\n{}\n".format(canonical_request))
+
+        string_to_sign = algorithm + '\n' + amzdate + '\n' + credential_scope + '\n' + hashlib.sha256(
+            canonical_request).hexdigest()
+
+        sys.stderr.write("String To Sign:\n{}\n".format(string_to_sign))
+
+        signing_key = self.getSignatureKey(datestamp, 's3')
+        signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
+
+        authorization_header = algorithm + ' ' + 'Credential=' + self.access_key + '/' + credential_scope + ', ' + 'SignedHeaders=' + signed_headers + ', ' + 'Signature=' + signature
+        request.add_header('Authorization', authorization_header)
+
+        sys.stderr.write("Request Header: {}\n".format(request.headers))
+
         return request
 
 
@@ -217,8 +245,8 @@ class APTMessage(object):
 class S3_method(object):
     __eof = False
 
-    def __init__(self):
-        self.iam = AWSCredentials()
+    def __init__(self, config_file='/etc/apt/s3auth.conf'):
+        self.iam = AWSCredentials(config_file)
         self.iam.get_credentials()
         self.send_capabilities()
 
@@ -352,7 +380,7 @@ class S3_method(object):
 
 if __name__ == '__main__':
     try:
-        method = S3_method()
+        method = S3_method('s3auth.conf')
         ret = method.run()
         sys.exit(ret)
     except KeyboardInterrupt:
