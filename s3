@@ -154,6 +154,9 @@ class AWSCredentials(object):
                 xmlResponse = ET.fromstring(e.read())
                 if xmlResponse is not None:
                     e.msg = "{} - {}\n".format(e, xmlResponse.find("Message").text)
+            if e.code == 301:
+                e.msg = "{} - Set s3auth.conf region to match bucket 'Region': bucket may not be in {}\n".format(e, self.region)
+
             return e
         # For other errors, throw an exception directly
         except urllib2.URLError as e:
