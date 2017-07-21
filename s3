@@ -22,6 +22,7 @@ import json
 import sys
 import os
 import datetime
+import xml.etree.ElementTree as ET
 from configobj import ConfigObj
 
 class AWSCredentials(object):
@@ -137,6 +138,11 @@ class AWSCredentials(object):
             # HTTPError is a "file like object" similar to what
             # urllib2.urlopen returns, so return it and let caller
             # deal with the error code
+            if e.code == 400:
+                # token errors are buried in 400 messages so expose
+                xmlResponse = ET.fromstring(e.read())
+                if xmlResponse is not None:
+                    e.msg = "{} - {}\n".format(e, xmlResponse.find("Message").text)
             return e
         # For other errors, throw an exception directly
         except urllib2.URLError as e:
