@@ -25,11 +25,13 @@ import datetime
 import xml.etree.ElementTree as ET
 from configobj import ConfigObj
 
+
 class AWSCredentials(object):
     """
     Class for dealing with IAM role credentials from meta-data server and later
     on to deal with boto/aws config provided keys
     """
+
     def __init__(self, config_file=None):
         self.conf_file = config_file
         host = 'http://169.254.169.254'
@@ -97,7 +99,7 @@ class AWSCredentials(object):
             self.__get_role()
             request = urllib2.Request(
                 urlparse.urljoin(self.meta_data_uri, self.iamrole)
-                )
+            )
 
             response = None
 
@@ -115,9 +117,18 @@ class AWSCredentials(object):
             sys.stderr.write("Using metadata for credentials\n")
 
         self.access_key = data['AccessKeyId']
+        if self.access_key is None or self.access_key == '':
+            raise Exception("AccessKeyId required")
+
         self.secret_key = data['SecretAccessKey']
+        if self.secret_key is None or self.secret_key == '':
+            raise Exception("SecretAccessKey required")
+
         self.token = data['Token']
+
         self.region = data.get('Region', 'us-east-1')
+        if self.region is None or self.region == '':
+            raise Exception("Region required")
         sys.stderr.write("Region: {}\n".format(self.region))
 
     def v4Sign(self, key, msg):
@@ -163,44 +174,81 @@ class AWSCredentials(object):
         url = "{}://{}{}".format(uri_parsed.scheme, host, "/{}{}".format(bucket, uri_parsed.path))
         request = urllib2.Request(url)
 
-        canonical_uri = request.get_selector()
-
-        payload_hash = hashlib.sha256('').hexdigest()
-
-        request.add_header('x-amz-content-sha256', payload_hash)
+        request.add_header('x-amz-content-sha256', self._payload_hash(request))
 
         # Create a date for headers and the credential string
-        t = datetime.datetime.utcnow()
-        amzdate = t.strftime('%Y%m%dT%H%M%SZ')
-        datestamp = t.strftime('%Y%m%d')
+        amzdate = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
 
         request.add_header('x-amz-date', amzdate)
 
-        request.add_header('x-amz-security-token', self.token)
+        if self.token is not None and self.token != '':
+            request.add_header('x-amz-security-token', self.token)
+
+        canonical_request = self._canonical_request(request, host, amzdate)
+
+        authorization_header = self._authorization_header(canonical_request, amzdate)
+
+        request.add_header('Authorization', authorization_header)
+
+        return request
+
+    def _authorization_header(self, canonical_request, amzdate):
+        datestamp = amzdate.split('T')[0]
 
         algorithm = 'AWS4-HMAC-SHA256'
         credential_scope = datestamp + '/' + self.region + '/s3/aws4_request'
-        canonical_querystring = ''
 
-        canonical_headers = 'host:' + host + '\n' \
-                            + 'x-amz-content-sha256:' + payload_hash + '\n' \
-                            + 'x-amz-date:' + amzdate + '\n' \
-                            + 'x-amz-security-token:' + self.token + '\n'
-
-        signed_headers = 'host;x-amz-content-sha256;x-amz-date;x-amz-security-token'
-
-        canonical_request = request.get_method() + '\n' + canonical_uri + '\n' + canonical_querystring + '\n' + canonical_headers + '\n' + signed_headers + '\n' + payload_hash
-
-        string_to_sign = algorithm + '\n' + amzdate + '\n' + credential_scope + '\n' + hashlib.sha256(
-            canonical_request).hexdigest()
+        string_to_sign = algorithm + '\n' \
+                         + amzdate + '\n' \
+                         + credential_scope + '\n' \
+                         + canonical_request
 
         signing_key = self.getSignatureKey(datestamp, 's3')
         signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
 
-        authorization_header = algorithm + ' ' + 'Credential=' + self.access_key + '/' + credential_scope + ', ' + 'SignedHeaders=' + signed_headers + ', ' + 'Signature=' + signature
-        request.add_header('Authorization', authorization_header)
+        authorization_header = "{} Credential={}/{}, SignedHeaders={}, Signature={}".format(
+            algorithm,
+            self.access_key,
+            credential_scope,
+            self._signed_headers(),
+            signature
+        )
 
-        return request
+        return authorization_header
+
+    def _canonical_request(self, request, host, amzdate):
+
+        canonical_uri = request.get_selector()
+        canonical_querystring = ''
+
+        canonical_headers = 'host:' + host + '\n' \
+                            + 'x-amz-content-sha256:' + self._payload_hash(request) + '\n' \
+                            + 'x-amz-date:' + amzdate + '\n'
+
+        if self.token is not None and self.token != '':
+            canonical_headers += 'x-amz-security-token:' + self.token + '\n'
+
+        canonical_request = request.get_method() + '\n' \
+                            + canonical_uri + '\n' \
+                            + canonical_querystring + '\n' \
+                            + canonical_headers + '\n' \
+                            + self._signed_headers() + '\n' \
+                            + self._payload_hash(request)
+
+        return hashlib.sha256(canonical_request).hexdigest()
+
+    def _signed_headers(self):
+        signed_headers = 'host;x-amz-content-sha256;x-amz-date'
+        if self.token is not None and self.token != '':
+            signed_headers += ';x-amz-security-token'
+        return signed_headers
+
+    def _payload_hash(self, request):
+        payload = request.get_data()
+        if payload is None:
+            payload = ''
+
+        return hashlib.sha256(payload).hexdigest()
 
 
 class APTMessage(object):
@@ -327,8 +375,8 @@ class S3_method(object):
         self.uri_parsed = urlparse.urlparse(self.uri)
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
-        self.uri_updated = 'https://' + self.uri_parsed.netloc +\
-            self.quote(self.uri_parsed.path, '+~ ')
+        self.uri_updated = 'https://' + self.uri_parsed.netloc + \
+                           self.quote(self.uri_parsed.path, '+~ ')
         self.filename = msg['Filename']
 
         response = self.iam.urlopen(self.uri_updated)
@@ -375,6 +423,7 @@ class S3_method(object):
             'MD5Sum-Hash': hash_md5.hexdigest(),
             'SHA256-Hash': hash_sha256.hexdigest(),
             'SHA512-Hash': hash_sha512.hexdigest()})
+
 
 if __name__ == '__main__':
     try:
