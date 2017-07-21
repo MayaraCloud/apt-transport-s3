@@ -141,10 +141,10 @@ class AWSCredentials(object):
         kSigning = self.v4Sign(kService, 'aws4_request')
         return kSigning
 
-    def urlopen(self, url, **kwargs):
-        """urlopen(url) open the remote file and return a file object."""
+    def uriopen(self, uri):
+        """uriopen(uri) open the remote file and return a file object."""
         try:
-            return urllib2.urlopen(self._request(url), None, 30)
+            return urllib2.urlopen(self._request(uri), None, 30)
         except urllib2.HTTPError as e:
             # HTTPError is a "file like object" similar to what
             # urllib2.urlopen returns, so return it and let caller
@@ -164,15 +164,32 @@ class AWSCredentials(object):
         except urllib2.socket.timeout:
             raise Exception("Socket timeout")
 
-    def _request(self, url):
-        uri_parsed = urlparse.urlparse(url)
-        host = uri_parsed.netloc
-        pos = host.find(".s3")
-        bucket = host[:pos]
-        host = host[pos + 1:]
+    def _request(self, uri):
+        uri_parsed = urlparse.urlparse(uri)
+        if '.' in uri_parsed.netloc:
+            raise Exception("uri should not include fully qualified domain name for bucket")
 
-        url = "{}://{}{}".format(uri_parsed.scheme, host, "/{}{}".format(bucket, uri_parsed.path))
-        request = urllib2.Request(url)
+        # quote path for +, ~, and spaces
+        # see bugs.launchpad.net #1003633 and #1086997
+        scheme = 'https'
+        host = 's3.{}.amazonaws.com'.format(self.region)
+        bucket = uri_parsed.netloc
+        path = '/{}{}'.format(bucket, self._quote(uri_parsed.path, '+~ '))
+
+        s3url = urlparse.urlunparse(
+            (
+                scheme,
+                host,
+                path,
+                '',
+                '',
+                ''
+            )
+        )
+
+        sys.stderr.write('New Url: {}\n'.format(s3url))
+
+        request = urllib2.Request(s3url)
 
         request.add_header('x-amz-content-sha256', self._payload_hash(request))
 
@@ -249,6 +266,16 @@ class AWSCredentials(object):
             payload = ''
 
         return hashlib.sha256(payload).hexdigest()
+
+    # We need to be able to quote specific characters to support S3
+    # lookups, something urllib and friends don't do easily
+    def _quote(self, s, unsafe):
+        res = list(s)
+        for i in range(len(res)):
+            c = res[i]
+            if c in unsafe:
+                res[i] = '%%%02X' % ord(c)
+        return ''.join(res)
 
 
 class APTMessage(object):
@@ -360,26 +387,12 @@ class S3_method(object):
             else:
                 return 100
 
-    # We need to be able to quote specific characters to support S3
-    # lookups, something urllib and friends don't do easily
-    def quote(self, s, unsafe):
-        res = list(s)
-        for i in range(len(res)):
-            c = res[i]
-            if c in unsafe:
-                res[i] = '%%%02X' % ord(c)
-        return ''.join(res)
-
     def fetch(self, msg):
         self.uri = msg['URI']
-        self.uri_parsed = urlparse.urlparse(self.uri)
-        # quote path for +, ~, and spaces
-        # see bugs.launchpad.net #1003633 and #1086997
-        self.uri_updated = 'https://' + self.uri_parsed.netloc + \
-                           self.quote(self.uri_parsed.path, '+~ ')
+        response = self.iam.uriopen(self.uri)
+
         self.filename = msg['Filename']
 
-        response = self.iam.urlopen(self.uri_updated)
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
 
         if response.code != 200:
