@@ -153,9 +153,9 @@ class AWSCredentials(object):
                 # token errors are buried in 400 messages so expose
                 xmlResponse = ET.fromstring(e.read())
                 if xmlResponse is not None:
-                    e.msg = "{} - {}\n".format(e, xmlResponse.find("Message").text)
+                    e.msg = "{} - {}".format(e, xmlResponse.find("Message").text)
             if e.code == 301:
-                e.msg = "{} - Set s3auth.conf region to match bucket 'Region': bucket may not be in {}\n".format(e, self.region)
+                e.msg = "{} - Set s3auth.conf region to match bucket 'Region': bucket may not be in {}".format(e, self.region)
 
             return e
         # For other errors, throw an exception directly
@@ -189,8 +189,6 @@ class AWSCredentials(object):
                 ''
             )
         )
-
-        sys.stderr.write('New Url: {}\n'.format(s3url))
 
         request = urllib2.Request(s3url)
 
