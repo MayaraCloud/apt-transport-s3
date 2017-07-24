@@ -54,6 +54,21 @@ specified using an s3:// prefix, for example:
 
 `deb s3://aptbucketname/repo/ trusty main contrib non-free`
 
+## Testing
+The module will run in interactive mode.  It accepts on `stdin` and outputs on `stdout`.  The messages it accepts on stdin
+are in the following format and [documented here](http://www.fifi.org/doc/libapt-pkg-doc/method.html/index.html#abstract).
+
+```
+600 URI Acquire
+URI:s3://my-s3-repository/project-a/dists/trusty/main/binary-amd64/Packages
+Filename:Packages.downloaded
+Fail-Ignore:true
+Index-File:true
+
+```
+
+This message will trigger an s3 get from the above bucket and key and save it to Filename.
+
 ## Contribution
 If you want to contribute a patch via PR please create it against development
 branch. Patches via email are welcome as well.
