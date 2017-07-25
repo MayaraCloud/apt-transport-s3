@@ -64,7 +64,7 @@ URI:s3://my-s3-repository/project-a/dists/trusty/main/binary-amd64/Packages
 Filename:Packages.downloaded
 Fail-Ignore:true
 Index-File:true
-
+gog
 ```
 
 This message will trigger an s3 get from the above bucket and key and save it to Filename.
