@@ -85,6 +85,11 @@ class AWSCredentials(object):
         except:
             pass
 
+        self.region = data.get('Region', 'us-east-1')
+        if self.region is None or self.region == '':
+            raise Exception("Region required")
+        sys.stderr.write("Region: {}\n".format(self.region))
+
         if data.get("AccessKeyId") is not None:
             sys.stderr.write("Using config file for credentials\n")
 
@@ -125,11 +130,6 @@ class AWSCredentials(object):
             raise Exception("SecretAccessKey required")
 
         self.token = data['Token']
-
-        self.region = data.get('Region', 'us-east-1')
-        if self.region is None or self.region == '':
-            raise Exception("Region required")
-        sys.stderr.write("Region: {}\n".format(self.region))
 
     def v4Sign(self, key, msg):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
