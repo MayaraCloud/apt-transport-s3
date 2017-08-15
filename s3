@@ -237,6 +237,7 @@ class AWSCredentials(object):
     def _canonical_request(self, request, host, amzdate):
 
         canonical_uri = urlparse.unquote(request.get_selector())
+        canonical_uri = self._quote(canonical_uri, '+')
         canonical_querystring = ''
 
         canonical_headers = 'host:' + host + '\n' \
