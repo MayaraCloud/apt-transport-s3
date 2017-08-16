@@ -13,9 +13,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# https://github.com/BashtonLtd/apt-transport-s3
 
 import urllib2
 import urlparse
+import time
 import hashlib
 import hmac
 import json
@@ -25,7 +28,6 @@ import datetime
 import xml.etree.ElementTree as ET
 import socket
 import ssl
-import time
 from configobj import ConfigObj
 
 RETRIES = 5
