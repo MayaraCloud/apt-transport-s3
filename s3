@@ -13,6 +13,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# https://github.com/BashtonLtd/apt-transport-s3
 
 import urllib2
 import urlparse
@@ -141,21 +143,26 @@ class AWSCredentials(object):
         self.secret_key = data['SecretAccessKey']
         self.token = data['Token']
 
-    def _get_bucket(self, request):
+    def _get_resource(self, request):
         host = request.get_host()
+<<<<<<< HEAD
+        resource = request.get_selector()
+=======
+        resource = resource = request.get_selector()
+>>>>>>> 347c07d... Tidy bucket name finding.
 
-        # TODO: bucket name finding is ugly, I should find a way to support
-        # both naming conventions: http://bucket.s3.amazonaws.com/ and
-        # http://s3.amazonaws.com/bucket/
-        try:
-            pos = host.find(".s3")
-            assert pos != -1
+        pos = host.find(".s3")
+        if pos != -1:
             bucket = host[:pos]
-        except:
-            raise Exception("Can't establish bucket name based on the hostname:\
-              %s" % host)
-
-        return bucket
+<<<<<<< HEAD
+            return = "/" + bucket + resource # Bucket convention #2: bucket-name.s3.amazonaws.com
+        else:
+            return request.get_selector() # Bucket convention #1: /bucket-name/
+=======
+            return "/" + bucket + resource # Bucket convention #2: bucket-name.s3.amazonaws.com
+        else:
+            return resource # Bucket convention #1: /bucket-name/
+>>>>>>> 347c07d... Tidy bucket name finding.
 
     def sign(self, request, timeval=None):
         """
@@ -165,8 +172,12 @@ class AWSCredentials(object):
         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT",
                              timeval or time.gmtime())
         request.add_header('Date', date)
-        bucket = self._get_bucket(request)
-        resource = "/%s%s" % (bucket, request.get_selector(), )
+<<<<<<< HEAD
+        resource = self._get_resource(request)
+=======
+        resource = _get_resource(request)
+>>>>>>> 347c07d... Tidy bucket name finding.
+
         amz_headers = 'x-amz-security-token:%s\n' % self.token
         sigstring = ("%(method)s\n\n\n%(date)s\n"
                      "%(canon_amzn_headers)s%(canon_amzn_resource)s") % ({
@@ -179,6 +190,7 @@ class AWSCredentials(object):
             str(sigstring),
             hashlib.sha1).digest()
         signature = digest.encode('base64').strip()
+
         return signature
 
     def urlopen(self, url, **kwargs):
@@ -220,7 +232,7 @@ class AWSCredentials(object):
             'Authorization', "AWS {0}:{1}".format(
                 self.access_key,
                 signature
-            ).rstrip()
+            )
         )
         return request
 
@@ -406,6 +418,7 @@ class S3_method(object):
                 finally:
                     response.close()
 
+<<<<<<< HEAD
                 return
 
             self.send_uri_start({
@@ -441,6 +454,22 @@ class S3_method(object):
 
         else:
             raise Exception("Fetch request timed out")
+=======
+        f = open(self.filename, "w")
+        hash_sha256 = hashlib.sha256()
+        hash_sha512 = hashlib.sha512()
+        hash_md5 = hashlib.md5()
+        while True:
+            data = response.read(4096)
+            if not len(data):
+                break
+            hash_sha256.update(data)
+            hash_sha512.update(data)
+            hash_md5.update(data)
+            f.write(data)
+        response.close()
+        f.close()
+>>>>>>> 347c07d... Tidy bucket name finding.
 
         self.send_uri_done({
             'URI': self.uri,
