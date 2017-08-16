@@ -145,14 +145,24 @@ class AWSCredentials(object):
 
     def _get_resource(self, request):
         host = request.get_host()
+<<<<<<< HEAD
         resource = request.get_selector()
+=======
+        resource = resource = request.get_selector()
+>>>>>>> 347c07d... Tidy bucket name finding.
 
         pos = host.find(".s3")
         if pos != -1:
             bucket = host[:pos]
+<<<<<<< HEAD
             return = "/" + bucket + resource # Bucket convention #2: bucket-name.s3.amazonaws.com
         else:
             return request.get_selector() # Bucket convention #1: /bucket-name/
+=======
+            return "/" + bucket + resource # Bucket convention #2: bucket-name.s3.amazonaws.com
+        else:
+            return resource # Bucket convention #1: /bucket-name/
+>>>>>>> 347c07d... Tidy bucket name finding.
 
     def sign(self, request, timeval=None):
         """
@@ -162,7 +172,11 @@ class AWSCredentials(object):
         date = time.strftime("%a, %d %b %Y %H:%M:%S GMT",
                              timeval or time.gmtime())
         request.add_header('Date', date)
+<<<<<<< HEAD
         resource = self._get_resource(request)
+=======
+        resource = _get_resource(request)
+>>>>>>> 347c07d... Tidy bucket name finding.
 
         amz_headers = 'x-amz-security-token:%s\n' % self.token
         sigstring = ("%(method)s\n\n\n%(date)s\n"
@@ -404,6 +418,7 @@ class S3_method(object):
                 finally:
                     response.close()
 
+<<<<<<< HEAD
                 return
 
             self.send_uri_start({
@@ -439,6 +454,22 @@ class S3_method(object):
 
         else:
             raise Exception("Fetch request timed out")
+=======
+        f = open(self.filename, "w")
+        hash_sha256 = hashlib.sha256()
+        hash_sha512 = hashlib.sha512()
+        hash_md5 = hashlib.md5()
+        while True:
+            data = response.read(4096)
+            if not len(data):
+                break
+            hash_sha256.update(data)
+            hash_sha512.update(data)
+            hash_md5.update(data)
+            f.write(data)
+        response.close()
+        f.close()
+>>>>>>> 347c07d... Tidy bucket name finding.
 
         self.send_uri_done({
             'URI': self.uri,
@@ -447,7 +478,8 @@ class S3_method(object):
             'Last-Modified': response.headers.getheader('last-modified'),
             'MD5-Hash': hash_md5.hexdigest(),
             'MD5Sum-Hash': hash_md5.hexdigest(),
-            'SHA256-Hash': hash_sha256.hexdigest()})
+            'SHA256-Hash': hash_sha256.hexdigest(),
+            'SHA512-Hash': hash_sha512.hexdigest()})
 
 if __name__ == '__main__':
     try:
