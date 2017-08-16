@@ -23,7 +23,15 @@ import sys
 import os
 import datetime
 import xml.etree.ElementTree as ET
+import socket
+import ssl
 from configobj import ConfigObj
+
+RETRIES = 5
+
+
+def wait_time(c):
+    return pow(2, c) - 1
 
 
 class AWSCredentials(object):
@@ -43,18 +51,30 @@ class AWSCredentials(object):
         request = urllib2.Request(self.meta_data_uri)
 
         response = None
-        try:
-            response = urllib2.urlopen(request, None, 5)
-            self.iamrole = response.read()
-        except urllib2.URLError as e:
-            if hasattr(e, 'reason'):
-                raise Exception("URL error reason: %s, probable cause is that\
- you don't have IAM role on this machine" % e.reason)
-            elif hasattr(e, 'code'):
-                raise Exception("Server error code: %s" % e.code)
-        finally:
-            if response:
-                response.close()
+
+        for i in range(0, RETRIES):
+            try:
+                response = urllib2.urlopen(request, None, 10)
+                self.iamrole = response.read()
+                break
+            except ssl.SSLError as e:
+                if 'timed out' in e.message:
+                    time.sleep(wait_time(i + 1))
+                else:
+                    raise e
+            except socket.timeout:
+                time.sleep(wait_time(i + 1))
+            except urllib2.URLError as e:
+                if hasattr(e, 'reason'):
+                    raise Exception("URL error reason: %s, probable cause is that\
+     you don't have IAM role on this machine" % e.reason)
+                elif hasattr(e, 'code'):
+                    raise Exception("Server error code: %s" % e.code)
+            finally:
+                if response:
+                    response.close()
+        else:
+            raise Exception("GetRole request timed out")
 
     def __load_config(self):
         """
@@ -108,18 +128,28 @@ class AWSCredentials(object):
 
             response = None
 
-            try:
-                response = urllib2.urlopen(request, None, 30)
-                data = json.loads(response.read())
-            except urllib2.URLError as e:
-                if hasattr(e, 'reason'):
-                    raise Exception("URL error reason: %s" % e.reason)
-                elif hasattr(e, 'code'):
-                    raise Exception("Server error code: %s" % e.code)
-            finally:
-                if response:
-                    response.close()
-            sys.stderr.write("Using metadata for credentials\n")
+            for i in range(0, RETRIES):
+                try:
+                    response = urllib2.urlopen(request, None, 30)
+                    data = json.loads(response.read())
+                    break
+                except ssl.SSLError as e:
+                    if 'timed out' in e.message:
+                        time.sleep(wait_time(i + 1))
+                    else:
+                        raise e
+                except socket.timeout:
+                    time.sleep(wait_time(i + 1))
+                except urllib2.URLError as e:
+                    if hasattr(e, 'reason'):
+                        raise Exception("URL error reason: %s" % e.reason)
+                    elif hasattr(e, 'code'):
+                        raise Exception("Server error code: %s" % e.code)
+                finally:
+                    if response:
+                        response.close()
+            else:
+                raise Exception("GetCredentials request timed out")
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
@@ -353,15 +383,19 @@ class S3_method(object):
                 return result
             if line == '\n':
                 return result
-            s = line.split(":", 1)
-            result[s[0]] = s[1].strip()
+            (item, value) = line.split(":", 1)
+            if not result.get(item):
+                result[item] = []
+            result[item].append(value.strip())
+        return result
 
     def send(self, code, headers):
         message = APTMessage(code, headers)
         sys.stdout.write(message.encode())
 
     def send_capabilities(self):
-        self.send(100, {'Version': '1.0', 'Single-Instance': 'true'})
+        self.send(100, {
+            'Version': '1.1', 'Single-Instance': 'true', 'Send-Config': 'true'})
 
     def send_status(self, headers):
         self.send(102, headers)
@@ -381,13 +415,37 @@ class S3_method(object):
             message = self._read_message()
             if message is None:
                 return 0
-            if message['_number'] == 600:
+            if message['_number'] == 601:
+                try:
+                    self.configure(message)
+                except Exception, e:
+                    self.fail(e.__class__.__name__ + ": " + str(e))
+            elif message['_number'] == 600:
                 try:
                     self.fetch(message)
                 except Exception, e:
                     self.fail(e.__class__.__name__ + ": " + str(e))
             else:
                 return 100
+
+    # configure
+    def configure(self, message):
+        for item in message['Config-Item']:
+            if item.startswith('Acquire::http::Proxy'):
+                (key, value) = item.split('=',1)
+                if key == 'Acquire::http::Proxy':
+                    os.environ['http_proxy'] = value
+                    os.environ['https_proxy'] = value
+
+    # We need to be able to quote specific characters to support S3
+    # lookups, something urllib and friends don't do easily
+    def quote(self, s, unsafe):
+        res = list(s)
+        for i in range(len(res)):
+            c = res[i]
+            if c in unsafe:
+                res[i] = '%%%02X' % ord(c)
+        return ''.join(res)
 
     def fetch(self, msg):
         self.uri = msg['URI']
@@ -396,38 +454,76 @@ class S3_method(object):
         self.filename = msg['Filename']
 
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
+        for i in range(0, RETRIES):
+            try:
+                response = self.iam.urlopen(self.uri_updated)
+            except ssl.SSLError as e:
+                if 'timed out' in e.message:
+                    time.sleep(wait_time(i + 1))
+                    continue
+                else:
+                    raise e
+            except socket.timeout:
+                time.sleep(wait_time(i + 1))
+                continue
 
-        if response.code != 200:
-            self.send_uri_failure({
+            self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
+
+            if response.code != 200:
+                self.send_uri_failure({
+                    'URI': self.uri,
+                    'Message': str(response.code) + '  ' + response.msg,
+                    'FailReason': 'HttpError' + str(response.code)})
+                try:
+                    while True:
+                        data = response.read(4096)
+                        if not len(data):
+                            break
+                except ssl.SSLError as e:
+                    if 'timed out' in e.message:
+                        pass
+                    else:
+                        raise e
+                except socket.timeout:
+                    pass
+                finally:
+                    response.close()
+
+                return
+
+            self.send_uri_start({
                 'URI': self.uri,
-                'Message': str(response.code) + '  ' + response.msg,
-                'FailReason': 'HttpError' + str(response.code)})
-            while True:
-                data = response.read(4096)
-                if not len(data):
-                    break
-            response.close()
-            return
+                'Size': response.headers.getheader('content-length'),
+                'Last-Modified': response.headers.getheader('last-modified')})
 
-        self.send_uri_start({
-            'URI': self.uri,
-            'Size': response.headers.getheader('content-length'),
-            'Last-Modified': response.headers.getheader('last-modified')})
-
-        f = open(self.filename, "w")
-        hash_sha256 = hashlib.sha256()
-        hash_sha512 = hashlib.sha512()
-        hash_md5 = hashlib.md5()
-        while True:
-            data = response.read(4096)
-            if not len(data):
+            f = open(self.filename, "w")
+            hash_sha256 = hashlib.sha256()
+            hash_sha512 = hashlib.sha512()
+            hash_md5 = hashlib.md5()
+            try:
+                while True:
+                    data = response.read(4096)
+                    if not len(data):
+                        break
+                    hash_sha256.update(data)
+                    hash_sha512.update(data)
+                    hash_md5.update(data)
+                    f.write(data)
                 break
-            hash_sha256.update(data)
-            hash_sha512.update(data)
-            hash_md5.update(data)
-            f.write(data)
-        response.close()
-        f.close()
+            except ssl.SSLError as e:
+                if 'timed out' in e.message:
+                    time.sleep(wait_time(i + 1))
+                else:
+                    raise e
+            except socket.timeout:
+                time.sleep(wait_time(i + 1))
+
+            finally:
+                response.close()
+                f.close()
+
+        else:
+            raise Exception("Fetch request timed out")
 
         self.send_uri_done({
             'URI': self.uri,
@@ -438,7 +534,6 @@ class S3_method(object):
             'MD5Sum-Hash': hash_md5.hexdigest(),
             'SHA256-Hash': hash_sha256.hexdigest(),
             'SHA512-Hash': hash_sha512.hexdigest()})
-
 
 if __name__ == '__main__':
     try:
