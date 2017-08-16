@@ -54,6 +54,12 @@ specified using an s3:// prefix, for example:
 
 `deb s3://aptbucketname/repo/ trusty main contrib non-free`
 
+if you need to use a proxy to connect to the internet you can specify this
+as an APT configuration directive (for example in
+/etc/apt/apt.conf.d/90apt-transport-s3)
+
+`Acquire::http::Proxy "http://myproxy:3128/";`
+
 ## Testing
 The module will run in interactive mode.  It accepts on `stdin` and outputs on `stdout`.  The messages it accepts on stdin
 are in the following format and [documented here](http://www.fifi.org/doc/libapt-pkg-doc/method.html/index.html#abstract).
