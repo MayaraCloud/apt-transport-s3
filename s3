@@ -25,6 +25,7 @@ import datetime
 import xml.etree.ElementTree as ET
 import socket
 import ssl
+import time
 from configobj import ConfigObj
 
 RETRIES = 5
@@ -448,15 +449,14 @@ class S3_method(object):
         return ''.join(res)
 
     def fetch(self, msg):
-        self.uri = msg['URI']
-        response = self.iam.uriopen(self.uri)
+        self.uri = msg['URI'][0]
 
-        self.filename = msg['Filename']
+        self.filename = msg['Filename'][0]
 
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
         for i in range(0, RETRIES):
             try:
-                response = self.iam.urlopen(self.uri_updated)
+                response = self.iam.uriopen(self.uri)
             except ssl.SSLError as e:
                 if 'timed out' in e.message:
                     time.sleep(wait_time(i + 1))
