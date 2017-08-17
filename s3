@@ -24,11 +24,8 @@ import hmac
 import json
 import sys
 import os
-<<<<<<< HEAD
-=======
 import datetime
 import xml.etree.ElementTree as ET
->>>>>>> development
 import socket
 import ssl
 from configobj import ConfigObj
@@ -173,83 +170,6 @@ class AWSCredentials(object):
 
         self.token = data['Token']
 
-<<<<<<< HEAD
-    def _get_resource(self, request):
-        host = request.get_host()
-        resource = request.get_selector()
-
-        pos = host.find(".s3")
-        if pos != -1:
-            bucket = host[:pos]
-            return = "/" + bucket + resource # Bucket convention #2: bucket-name.s3.amazonaws.com
-        else:
-            return request.get_selector() # Bucket convention #1: /bucket-name/
-
-    def sign(self, request, timeval=None):
-        """
-        Attach a valid S3 signature to request.
-        request - instance of Request
-        """
-        date = time.strftime("%a, %d %b %Y %H:%M:%S GMT",
-                             timeval or time.gmtime())
-        request.add_header('Date', date)
-        resource = self._get_resource(request)
-
-        amz_headers = 'x-amz-security-token:%s\n' % self.token
-        sigstring = ("%(method)s\n\n\n%(date)s\n"
-                     "%(canon_amzn_headers)s%(canon_amzn_resource)s") % ({
-                         'method': request.get_method(),
-                         'date': request.headers.get('Date'),
-                         'canon_amzn_headers': amz_headers,
-                         'canon_amzn_resource': resource})
-        digest = hmac.new(
-            str(self.secret_key),
-            str(sigstring),
-            hashlib.sha1).digest()
-        signature = digest.encode('base64').strip()
-
-        return signature
-
-    def urlopen(self, url, **kwargs):
-        """urlopen(url) open the remote file and return a file object."""
-        response = None
-        for i in range(0, RETRIES):
-            try:
-                response = urllib2.urlopen(self._request(url), None, 30)
-                break
-            except ssl.SSLError as e:
-                if 'timed out' in e.message:
-                    time.sleep(wait_time(i + 1))
-                else:
-                    raise e
-            except socket.timeout:
-                time.sleep(wait_time(i + 1))
-            except urllib2.HTTPError as e:
-                # HTTPError is a "file like object" similar to what
-                # urllib2.urlopen returns, so return it and let caller
-                # deal with the error code
-                response = e
-                break
-            # For other errors, throw an exception directly
-            except urllib2.URLError as e:
-                if hasattr(e, 'reason'):
-                    raise Exception("URL error reason: %s" % e.reason)
-                elif hasattr(e, 'code'):
-                    raise Exception("Server error code: %s" % e.code)
-        else:
-            raise Exception("Remote file open timed out")
-
-        return response
-
-    def _request(self, url):
-        request = urllib2.Request(url)
-        request.add_header('x-amz-security-token', self.token)
-        signature = self.sign(request)
-        request.add_header(
-            'Authorization', "AWS {0}:{1}".format(
-                self.access_key,
-                signature
-=======
     def v4Sign(self, key, msg):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
@@ -306,7 +226,6 @@ class AWSCredentials(object):
                 '',
                 '',
                 ''
->>>>>>> development
             )
         )
 
@@ -539,18 +458,6 @@ class S3_method(object):
 
     def fetch(self, msg):
         self.uri = msg['URI'][0]
-<<<<<<< HEAD
-        self.uri_parsed = urlparse.urlparse(self.uri)
-        # quote path for +, ~, and spaces
-        # see bugs.launchpad.net #1003633 and #1086997
-        self.uri_updated = 'https://' + self.uri_parsed.netloc +\
-            self.quote(self.uri_parsed.path, '+~ ')
-        self.filename = msg['Filename'][0]
-
-        for i in range(0, RETRIES):
-            try:
-                response = self.iam.urlopen(self.uri_updated)
-=======
 
         self.filename = msg['Filename'][0]
 
@@ -558,7 +465,6 @@ class S3_method(object):
         for i in range(0, RETRIES):
             try:
                 response = self.iam.uriopen(self.uri)
->>>>>>> development
             except ssl.SSLError as e:
                 if 'timed out' in e.message:
                     time.sleep(wait_time(i + 1))
