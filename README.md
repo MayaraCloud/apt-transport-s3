@@ -1,11 +1,17 @@
+[License and Copyright]: #license--copyright
+[Requirements]: #requirements
+[Configuration]: #configuration
+[Usage]: #usage
+[Contribution]: #contribution
+
 # apt-transport-s3
 
 ### Table of Contents
-1. [License & Copyright](#license & copyright)
-2. [Requirements](#requirements)
-3. [Configuration](#configuration)
-4. [Usage](#usage)
-5. [Contribution](#contribution)
+1. [License & Copyright][License and Copyright]
+2. [Requirements][Requirements]
+3. [Configuration][Contribution]
+4. [Usage][Usage]
+5. [Contribution][Contribution]
 
 ## apt-transport-s3
 Allow to have a privately hosted apt repository on S3. Access keys are read from
