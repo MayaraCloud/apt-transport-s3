@@ -3,8 +3,10 @@ Section: admin
 Priority: optional
 Maintainer: Marcin Kulisz (kuLa) <debian@kulisz.net>
 Uploaders: David Watson <dwatson@debian.org>
-Build-Depends: python (>= 2.6.6-3), debhelper (>= 9)
-Standards-Version: 3.9.6
+Build-Depends: python (>= 2.6.6-3),
+               debhelper (>= 9),
+               dh-python
+Standards-Version: 4.0.0
 X-Python-Version: >= 2.6
 Homepage: https://github.com/BashtonLtd/apt-transport-s3
 Vcs-Git: https://github.com/BashtonLtd/apt-transport-s3.git
@@ -12,7 +14,10 @@ Vcs-Browser: https://github.com/BashtonLtd/apt-transport-s3/tree/debian/sid
 
 Package: apt-transport-s3
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, apt, python-configobj
+Depends: ${misc:Depends},
+         ${python:Depends},
+         apt,
+         python-configobj
 Description: APT transport for privately held AWS S3 repositories
  This package contains the APT AWS S3 transport. It makes possible to fetch
  files from repositories privately held on AWS S3.
