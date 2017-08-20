@@ -3,8 +3,9 @@ Upstream-Name: apt-transport-s3
 Source: https://github.com/BashtonLtd/apt-transport-s3
 
 Files: *
-Copyright: 2014 Marcin Kulisz <marcin@bashton.com>
-           2014 David Watson <david@bashton.com>
+Copyright: 2017 Marcin Kulisz <debian@kulisz.net>
+           2014-2017 David Watson <david@bashton.com>
+           2014-2017 Marcin Kulisz <marcin@bashton.com>
 License: GPL-2+
  This package is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
