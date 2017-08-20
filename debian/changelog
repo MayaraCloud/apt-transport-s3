@@ -1,3 +1,10 @@
+apt-transport-s3 (1.3.0-1) UNRELEASED; urgency=medium
+
+  * Added build-dep on dh-python and bumping up std-ver to 4.0.0
+  * d/copyright update
+
+ -- Marcin Kulisz (kuLa) <debian@kulisz.net>  Sun, 20 Aug 2017 10:52:24 +0100
+
 apt-transport-s3 (1.2.1-1) unstable; urgency=medium
 
   * fixing signature handling in d/wach
