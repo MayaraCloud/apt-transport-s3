@@ -1,9 +1,13 @@
-apt-transport-s3 (1.3.0-1) UNRELEASED; urgency=medium
+apt-transport-s3 (1.3.0-1) unstable; urgency=medium
 
-  * Added build-dep on dh-python and bumping up std-ver to 4.0.0
+  * Added build-dep on dh-python and bumping up std-ver to 4.1.1
   * d/copyright update
+  * new upstream
+    - support for AWS AUTHv4, thx to Stephen Grier
+    - support for path based buckets
+    - support for proxy
 
- -- Marcin Kulisz (kuLa) <debian@kulisz.net>  Sun, 20 Aug 2017 10:52:24 +0100
+ -- Marcin Kulisz <debian@kulisz.net>  Thu, 23 Nov 2017 19:54:42 +0000
 
 apt-transport-s3 (1.2.1-1) unstable; urgency=medium
 
