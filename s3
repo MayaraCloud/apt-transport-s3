@@ -168,7 +168,7 @@ class AWSCredentials(object):
         if self.secret_key is None or self.secret_key == '':
             raise Exception("SecretAccessKey required")
 
-        self.token = data['Token']
+        self.token = data.get('Token')
 
     def v4Sign(self, key, msg):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
