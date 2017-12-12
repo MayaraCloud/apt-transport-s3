@@ -156,6 +156,10 @@ class AWSCredentials(object):
             data = self.__request_json(urlparse.urljoin(self.credentials_metadata,
                                                         self.iamrole))
 
+        if data.get('Endpoint') is None:
+            self.host = 's3.{}.amazonaws.com'.format(self.region)
+        self.host = data['Endpoint']
+
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
             raise Exception("AccessKeyId required")
@@ -218,7 +222,7 @@ class AWSCredentials(object):
 
         scheme = 'https'
         bucket = uri_parsed.netloc
-        host = '{}.s3.{}.amazonaws.com'.format(bucket, self.region)
+        host = '{}.{}'.format(bucket, self.host)
         path = '{}'.format(urllib2.quote(uri_parsed.path, safe='-._~/'))
 
         s3url = urlparse.urlunparse(
