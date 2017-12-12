@@ -47,11 +47,14 @@ can provide credentials required for using private apt repositories.
 
 NOTE: Region MUST match the region the buckets are stored in and if not defined defaults to us-east-1.
 
+Setting Endpoint allows for using providers other than Amazon AWS. If set, Endpoint disregards Region.
+
 Example of s3auth.conf file:
 ```
 AccessKeyId = myaccesskey
 SecretAccessKey = mysecretaccesskey
 Region = 'us-east-1'
+Endpoint = 'nyc3.digitaloceanspaces.com'
 ```
 
 ## Usage

@@ -160,6 +160,10 @@ class AWSCredentials(object):
             else:
                 raise Exception("GetCredentials request timed out")
 
+        if data.get('Endpoint') is None:
+            self.host = 's3.{}.amazonaws.com'.format(self.region)
+        self.host = data['Endpoint']
+
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
             raise Exception("AccessKeyId required")
@@ -214,7 +218,7 @@ class AWSCredentials(object):
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
         scheme = 'https'
-        host = 's3.{}.amazonaws.com'.format(self.region)
+        host = self.host
         bucket = uri_parsed.netloc
         path = '/{}{}'.format(bucket, self._quote(uri_parsed.path, '+~ '))
 
