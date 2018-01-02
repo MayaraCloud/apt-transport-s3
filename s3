@@ -456,6 +456,30 @@ class S3_method(object):
                 res[i] = '%%%02X' % ord(c)
         return ''.join(res)
 
+    def format_error_response(self, response):
+        """Extracts Info from AWS Error Repsonse and returns a formatted string
+
+        When the S3 API returns an error the body of the response also contains
+        information about the error. This function reads the Response object
+        for the body and returns a string of the form "[{Code}] {Message}"
+
+        will return an empty string when the response can not be parsed
+
+        https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html#RESTErrorResponses
+        """
+        try:
+            error = ET.fromstring(response.read())
+        except xml.etree.ElementTree.ParseError:
+            return ''
+
+        code = error.find('Code')
+        message = error.find('Message')
+        if code is not None and message is not None:
+            return '[{}] {}'.format(code.text, message.text)
+
+        # fallback to returning an empty string
+        return ''
+
     def fetch(self, msg):
         self.uri = msg['URI'][0]
 
@@ -478,9 +502,12 @@ class S3_method(object):
             self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
 
             if response.code != 200:
+                error_detail = self.format_error_response(response)
                 self.send_uri_failure({
                     'URI': self.uri,
-                    'Message': str(response.code) + '  ' + response.msg,
+                    'Message': '{}  {}  {}'.format(response.code,
+                                                   response.msg,
+                                                   error_detail),
                     'FailReason': 'HttpError' + str(response.code)})
                 try:
                     while True:
