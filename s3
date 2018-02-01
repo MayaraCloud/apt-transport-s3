@@ -30,11 +30,6 @@ import socket
 import ssl
 from configobj import ConfigObj
 
-RETRIES = 5
-
-
-def wait_time(c):
-    return pow(2, c) - 1
 
 RETRIES = 5
 
@@ -76,7 +71,7 @@ class AWSCredentials(object):
             except urllib2.URLError as e:
                 if hasattr(e, 'reason'):
                     raise Exception("URL error reason: %s, probable cause is that\
-     you don't have IAM role on this machine" % e.reason)
+     you don't have IAM role on this machine"                                              % e.reason)
                 elif hasattr(e, 'code'):
                     raise Exception("Server error code: %s" % e.code)
             finally:
@@ -208,8 +203,10 @@ class AWSCredentials(object):
 
     def _request(self, uri):
         uri_parsed = urlparse.urlparse(uri)
-        if '.' in uri_parsed.netloc:
-            raise Exception("uri should not include fully qualified domain name for bucket")
+        if uri_parsed.netloc.endswith(".amazonaws.com"):
+            raise Exception(
+                "uri '{}' should not include fully qualified domain name (.amazonaws.com) for bucket.\n".format(uri) +
+                "The bucket repo should be specified as 'deb s3://aptbucketname/repo/ trusty main contrib non-free'")
 
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
