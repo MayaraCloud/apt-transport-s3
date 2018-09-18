@@ -208,8 +208,8 @@ class AWSCredentials(object):
 
     def _request(self, uri):
         uri_parsed = urlparse.urlparse(uri)
-        if '.' in uri_parsed.netloc:
-            raise Exception("uri should not include fully qualified domain name for bucket")
+	if uri_parsed.netloc.endswith(".amazonaws.com"):
+		raise Exception( "uri '{}' should not include fully qualified domain name (.amazonaws.com) for bucket.\n".format(uri) + "The bucket repo should be specified as 'deb s3://aptbucketname/repo/ trusty main contrib non-free'" )
 
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
