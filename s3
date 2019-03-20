@@ -208,8 +208,8 @@ class AWSCredentials(object):
 
     def _request(self, uri):
         uri_parsed = urlparse.urlparse(uri)
-	if uri_parsed.netloc.endswith(".amazonaws.com"):
-		raise Exception( "uri '{}' should not include fully qualified domain name (.amazonaws.com) for bucket.\n".format(uri) + "The bucket repo should be specified as 'deb s3://aptbucketname/repo/ trusty main contrib non-free'" )
+        if uri_parsed.netloc.endswith(".amazonaws.com"):
+            raise Exception( "uri '{}' should not include fully qualified domain name (.amazonaws.com) for bucket.\n".format(uri) + "The bucket repo should be specified as 'deb s3://aptbucketname/repo/ trusty main contrib non-free'" )
 
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
@@ -276,7 +276,8 @@ class AWSCredentials(object):
     def _canonical_request(self, request, host, amzdate):
 
         canonical_uri = urlparse.unquote(request.get_selector())
-        canonical_uri = self._quote(canonical_uri, '+')
+        # handle s3api unsafe characters to support '0:0.0.0~stringYYYYMMDDHHmm' versioning.
+        canonical_uri = self._quote(canonical_uri, ':+')
         canonical_querystring = ''
 
         canonical_headers = 'host:' + host + '\n' \
