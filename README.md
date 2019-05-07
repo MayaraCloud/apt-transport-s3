@@ -45,7 +45,8 @@ usual environment variables.
 /etc/apt/s3auth.conf or <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">IAM role</a>
 can provide credentials required for using private apt repositories.
 
-NOTE: Region MUST match the region the buckets are stored in and if not defined defaults to us-east-1.
+NOTE: Region MUST match the region the buckets are stored in and if not defined
+it will try to fetch it from the metadata service.
 
 Example of s3auth.conf file:
 ```
