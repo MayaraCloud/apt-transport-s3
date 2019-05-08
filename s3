@@ -36,12 +36,6 @@ RETRIES = 5
 def wait_time(c):
     return pow(2, c) - 1
 
-RETRIES = 5
-
-
-def wait_time(c):
-    return pow(2, c) - 1
-
 
 class AWSCredentials(object):
     """
@@ -101,6 +95,32 @@ class AWSCredentials(object):
         else:
             raise Exception("Config file: %s doesn't exist" % self.conf_file)
 
+    def __request_json(self, url):
+        request = urllib2.Request(url)
+        response = None
+
+        for i in range(0, RETRIES):
+            try:
+                response = urllib2.urlopen(request, None, 30)
+                return json.loads(response.read())
+            except ssl.SSLError as e:
+                if 'timed out' in e.message:
+                    time.sleep(wait_time(i + 1))
+                else:
+                    raise e
+            except socket.timeout:
+                time.sleep(wait_time(i + 1))
+            except urllib2.URLError as e:
+                if hasattr(e, 'reason'):
+                    raise Exception("URL error reason: %s" % e.reason)
+                elif hasattr(e, 'code'):
+                    raise Exception("Server error code: %s" % e.code)
+            finally:
+                if response:
+                    response.close()
+
+        raise Exception("request for {} timed out".format(url))
+
     def get_credentials(self):
         """
         Read IAM credentials from AWS metadata store.
@@ -114,10 +134,9 @@ class AWSCredentials(object):
         except:
             pass
 
-        self.region = data.get('Region', 'us-east-1')
+        self.region = data.get('Region')
         if self.region is None or self.region == '':
-            raise Exception("Region required")
-        sys.stderr.write("Region: {}\n".format(self.region))
+            self.region = self.__request_json('http://169.254.169.254/latest/dynamic/instance-identity/document')['region']
 
         if data.get("AccessKeyId") is not None:
             sys.stderr.write("Using config file for credentials\n")
@@ -131,34 +150,7 @@ class AWSCredentials(object):
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
-            request = urllib2.Request(
-                urlparse.urljoin(self.meta_data_uri, self.iamrole)
-            )
-
-            response = None
-
-            for i in range(0, RETRIES):
-                try:
-                    response = urllib2.urlopen(request, None, 30)
-                    data = json.loads(response.read())
-                    break
-                except ssl.SSLError as e:
-                    if 'timed out' in e.message:
-                        time.sleep(wait_time(i + 1))
-                    else:
-                        raise e
-                except socket.timeout:
-                    time.sleep(wait_time(i + 1))
-                except urllib2.URLError as e:
-                    if hasattr(e, 'reason'):
-                        raise Exception("URL error reason: %s" % e.reason)
-                    elif hasattr(e, 'code'):
-                        raise Exception("Server error code: %s" % e.code)
-                finally:
-                    if response:
-                        response.close()
-            else:
-                raise Exception("GetCredentials request timed out")
+            data = self.__request_json(urlparse.urljoin(self.meta_data_uri, self.iamrole))
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
@@ -211,12 +203,10 @@ class AWSCredentials(object):
         if '.' in uri_parsed.netloc:
             raise Exception("uri should not include fully qualified domain name for bucket")
 
-        # quote path for +, ~, and spaces
-        # see bugs.launchpad.net #1003633 and #1086997
         scheme = 'https'
-        host = 's3.{}.amazonaws.com'.format(self.region)
         bucket = uri_parsed.netloc
-        path = '/{}{}'.format(bucket, self._quote(uri_parsed.path, '+~ '))
+        host = '{}.s3.{}.amazonaws.com'.format(bucket, self.region)
+        path = '{}'.format(urllib2.quote(uri_parsed.path, safe='-._~/'))
 
         s3url = urlparse.urlunparse(
             (
@@ -275,8 +265,7 @@ class AWSCredentials(object):
 
     def _canonical_request(self, request, host, amzdate):
 
-        canonical_uri = urlparse.unquote(request.get_selector())
-        canonical_uri = self._quote(canonical_uri, '+')
+        canonical_uri = request.get_selector()
         canonical_querystring = ''
 
         canonical_headers = 'host:' + host + '\n' \
@@ -307,16 +296,6 @@ class AWSCredentials(object):
             payload = ''
 
         return hashlib.sha256(payload).hexdigest()
-
-    # We need to be able to quote specific characters to support S3
-    # lookups, something urllib and friends don't do easily
-    def _quote(self, s, unsafe):
-        res = list(s)
-        for i in range(len(res)):
-            c = res[i]
-            if c in unsafe:
-                res[i] = '%%%02X' % ord(c)
-        return ''.join(res)
 
 
 class APTMessage(object):
@@ -427,12 +406,12 @@ class S3_method(object):
             if message['_number'] == 601:
                 try:
                     self.configure(message)
-                except Exception, e:
+                except Exception as e:
                     self.fail(e.__class__.__name__ + ": " + str(e))
             elif message['_number'] == 600:
                 try:
                     self.fetch(message)
-                except Exception, e:
+                except Exception as e:
                     self.fail(e.__class__.__name__ + ": " + str(e))
             else:
                 return 100
@@ -445,16 +424,6 @@ class S3_method(object):
                 if key == 'Acquire::http::Proxy':
                     os.environ['http_proxy'] = value
                     os.environ['https_proxy'] = value
-
-    # We need to be able to quote specific characters to support S3
-    # lookups, something urllib and friends don't do easily
-    def quote(self, s, unsafe):
-        res = list(s)
-        for i in range(len(res)):
-            c = res[i]
-            if c in unsafe:
-                res[i] = '%%%02X' % ord(c)
-        return ''.join(res)
 
     def fetch(self, msg):
         self.uri = msg['URI'][0]
