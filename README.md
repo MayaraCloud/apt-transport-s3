@@ -20,7 +20,9 @@ access to AWS metadata server on 169.254.169.254.  They are also taken from the
 usual environment variables.
 
 ## License & Copyright
-    # Copyright (C) 2014 Bashton Ltd.
+    # Copyright (C) 2018- Mayara Cloud Ltd.
+    # Copyright (C) 2016-2018 Claranet Ltd.
+    # Copyright (C) 2014-2016 Bashton Ltd.
     #
     # This program is free software; you can redistribute it and/or modify
     # it under the terms of the GNU General Public License as published by
@@ -52,6 +54,7 @@ Example of s3auth.conf file:
 AccessKeyId = myaccesskey
 SecretAccessKey = mysecretaccesskey
 Region = 'us-east-1'
+Token = ''
 ```
 
 ## Usage
@@ -67,8 +70,10 @@ as an APT configuration directive (for example in
 `Acquire::http::Proxy "http://myproxy:3128/";`
 
 ## Testing
-The module will run in interactive mode.  It accepts on `stdin` and outputs on `stdout`.  The messages it accepts on stdin
-are in the following format and [documented here](http://www.fifi.org/doc/libapt-pkg-doc/method.html/index.html#abstract).
+The module will run in interactive mode.  It accepts on `stdin` and outputs on
+`stdout`.  The messages it accepts on stdin
+are in the following format and
+[documented here](http://www.fifi.org/doc/libapt-pkg-doc/method.html/index.html#abstract).
 
 ```
 600 URI Acquire
@@ -79,7 +84,9 @@ Index-File:true
 
 ```
 
-This message will trigger an s3 get from the above bucket and key and save it to Filename.  It needs a blank line after the message to trigger the processing by the s3 method.
+This message will trigger an s3 get from the above bucket and key and save it to
+Filename.  It needs a blank line after the message to trigger the processing by
+the s3 method.
 
 ## Contribution
 If you want to contribute a patch via PR please create it against development
