@@ -1,9 +1,9 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: apt-transport-s3
-Source: https://github.com/BashtonLtd/apt-transport-s3
+Source: https://github.com/MayaraCloud/apt-transport-s3
 
 Files: *
-Copyright: 2017 Marcin Kulisz <debian@kulisz.net>
+Copyright: 2017- Marcin Kulisz <debian@kulisz.net>
            2014-2017 David Watson <david@bashton.com>
            2014-2017 Marcin Kulisz <marcin@bashton.com>
 License: GPL-2+
