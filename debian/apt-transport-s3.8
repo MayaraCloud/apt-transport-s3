@@ -5,6 +5,12 @@
 apt-transport-s3 \- it's a package which contains apt transport ('plugin')
 allowing apt to fetch files stored in private repositories held on AWS S3.
 
+.SH Bucket name
+According to the S3 bucket naming convention to make it working with this
+transport over TLS bucket name can NOT contain dots in it. More information
+about it can be found at
+https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
+
 .SH AWS Credentials
 To access repositories held on S3 it is compulsory to have correct permissions
 into the bucket where repository is located and those permissions have to be
@@ -24,7 +30,7 @@ instead of HTTP(s), cdrom or FTP protocol
 should be used
 .br
 ex.
-.IR "deb [trusted=yes] s3://bucket_name.s3.amazonaws.com/ testing main contrib non-free"
+.IR "deb [trusted=yes] s3://bucket_name/ testing main contrib non-free"
 
 .PP
 .SH EXAMPLE /etc/apt/s3auth.conf
