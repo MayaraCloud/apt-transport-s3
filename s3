@@ -71,8 +71,9 @@ class AWSCredentials(object):
                 time.sleep(wait_time(i + 1))
             except urllib2.URLError as e:
                 if hasattr(e, 'reason'):
-                    raise Exception("URL error reason: %s, probable cause is that\
-     you don't have IAM role on this machine" % e.reason)
+                    raise Exception("URL error reason: %s, probable cause is \
+                                    that you don't have IAM role on this \
+                                    machine" % e.reason)
                 elif hasattr(e, 'code'):
                     raise Exception("Server error code: %s" % e.code)
             finally:
@@ -118,7 +119,8 @@ class AWSCredentials(object):
         # exist setting var value to None
         if data.get("AccessKeyId") is None:
             data['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID", None)
-            data['SecretAccessKey'] = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
+            data['SecretAccessKey'] = os.environ.get(
+                "AWS_SECRET_ACCESS_KEY", None)
             data['Token'] = os.environ.get("AWS_SESSION_TOKEN", None)
 
         if data.get("AccessKeyId") is None:
@@ -166,7 +168,8 @@ class AWSCredentials(object):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
     def getSignatureKey(self, dateStamp, serviceName):
-        kDate = self.v4Sign(('AWS4' + self.secret_key).encode('utf-8'), dateStamp)
+        kDate = self.v4Sign(
+            ('AWS4' + self.secret_key).encode('utf-8'), dateStamp)
         kRegion = self.v4Sign(kDate, self.region)
         kService = self.v4Sign(kRegion, serviceName)
         kSigning = self.v4Sign(kService, 'aws4_request')
@@ -184,9 +187,11 @@ class AWSCredentials(object):
                 # token errors are buried in 400 messages so expose
                 xmlResponse = ET.fromstring(e.read())
                 if xmlResponse is not None:
-                    e.msg = "{} - {}".format(e, xmlResponse.find("Message").text)
+                    e.msg = "{} - {}".format(e,
+                                             xmlResponse.find("Message").text)
             if e.code == 301:
-                e.msg = "{} - Set s3auth.conf region to match bucket 'Region': bucket may not be in {}".format(e, self.region)
+                e.msg = "{} - Set s3auth.conf region to match bucket 'Region':\
+                        bucket may not be in {}".format(e, self.region)
 
             return e
         # For other errors, throw an exception directly
@@ -203,10 +208,11 @@ class AWSCredentials(object):
         # Below if statement is to accommodate AWS guidance in regards buckets
         # naming convention presented in
         # https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
-        # S3 bucket names for apt repo can NOT contain '.' in the name otherwise
-        # TLS certs are broken
+        # S3 bucket names for apt repo can NOT contain '.' in the name
+        # otherwise TLS certs are broken
         if '.' in uri_parsed.netloc:
-            raise Exception("uri should not include fully qualified domain name for bucket")
+            raise Exception("uri should not include fully qualified domain \
+                            name for bucket")
 
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
@@ -240,7 +246,8 @@ class AWSCredentials(object):
 
         canonical_request = self._canonical_request(request, host, amzdate)
 
-        authorization_header = self._authorization_header(canonical_request, amzdate)
+        authorization_header = self._authorization_header(
+            canonical_request, amzdate)
 
         request.add_header('Authorization', authorization_header)
 
@@ -253,12 +260,13 @@ class AWSCredentials(object):
         credential_scope = datestamp + '/' + self.region + '/s3/aws4_request'
 
         string_to_sign = algorithm + '\n' \
-                         + amzdate + '\n' \
-                         + credential_scope + '\n' \
-                         + canonical_request
+            + amzdate + '\n' \
+            + credential_scope + '\n' \
+            + canonical_request
 
         signing_key = self.getSignatureKey(datestamp, 's3')
-        signature = hmac.new(signing_key, string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest()
+        signature = hmac.new(signing_key, string_to_sign.encode(
+            'utf-8'), hashlib.sha256).hexdigest()
 
         authorization_header = "{} Credential={}/{}, SignedHeaders={}, Signature={}".format(
             algorithm,
@@ -277,18 +285,19 @@ class AWSCredentials(object):
         canonical_querystring = ''
 
         canonical_headers = 'host:' + host + '\n' \
-                            + 'x-amz-content-sha256:' + self._payload_hash(request) + '\n' \
+                            + 'x-amz-content-sha256:' \
+                            + self._payload_hash(request) + '\n' \
                             + 'x-amz-date:' + amzdate + '\n'
 
         if self.token is not None and self.token != '':
             canonical_headers += 'x-amz-security-token:' + self.token + '\n'
 
         canonical_request = request.get_method() + '\n' \
-                            + canonical_uri + '\n' \
-                            + canonical_querystring + '\n' \
-                            + canonical_headers + '\n' \
-                            + self._signed_headers() + '\n' \
-                            + self._payload_hash(request)
+            + canonical_uri + '\n' \
+            + canonical_querystring + '\n' \
+            + canonical_headers + '\n' \
+            + self._signed_headers() + '\n' \
+            + self._payload_hash(request)
 
         return hashlib.sha256(canonical_request).hexdigest()
 
@@ -401,7 +410,9 @@ class S3_method(object):
 
     def send_capabilities(self):
         self.send(100, {
-            'Version': '1.1', 'Single-Instance': 'true', 'Send-Config': 'true'})
+            'Version': '1.1',
+            'Single-Instance': 'true',
+            'Send-Config': 'true'})
 
     def send_status(self, headers):
         self.send(102, headers)
@@ -438,7 +449,7 @@ class S3_method(object):
     def configure(self, message):
         for item in message['Config-Item']:
             if item.startswith('Acquire::http::Proxy'):
-                (key, value) = item.split('=',1)
+                (key, value) = item.split('=', 1)
                 if key == 'Acquire::http::Proxy':
                     os.environ['http_proxy'] = value
                     os.environ['https_proxy'] = value
@@ -496,7 +507,9 @@ class S3_method(object):
                 time.sleep(wait_time(i + 1))
                 continue
 
-            self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
+            self.send_status({
+                'URI': self.uri,
+                'Message': 'Waiting for headers'})
 
             if response.code != 200:
                 error_detail = self.format_error_response(response)
@@ -566,6 +579,7 @@ class S3_method(object):
             'MD5Sum-Hash': hash_md5.hexdigest(),
             'SHA256-Hash': hash_sha256.hexdigest(),
             'SHA512-Hash': hash_sha512.hexdigest()})
+
 
 if __name__ == '__main__':
     try:
