@@ -38,12 +38,6 @@ RETRIES = 5
 def wait_time(c):
     return pow(2, c) - 1
 
-RETRIES = 5
-
-
-def wait_time(c):
-    return pow(2, c) - 1
-
 
 class AWSCredentials(object):
     """
