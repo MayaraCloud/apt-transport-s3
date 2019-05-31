@@ -69,6 +69,11 @@ as an APT configuration directive (for example in
 
 `Acquire::http::Proxy "http://myproxy:3128/";`
 
+Bucket name hosting repo can not contain dots in it's name as this (according
+to
+[AWS S3 naming convention](https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html))
+will invalidate virtual host style paths TLS certificates.
+
 ## Testing
 The module will run in interactive mode.  It accepts on `stdin` and outputs on
 `stdout`.  The messages it accepts on stdin
