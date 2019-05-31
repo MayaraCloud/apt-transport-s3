@@ -119,17 +119,13 @@ class AWSCredentials(object):
         self.region = data.get('Region', 'us-east-1')
         if self.region is None or self.region == '':
             raise Exception("Region required")
-        sys.stderr.write("Region: {}\n".format(self.region))
 
-        if data.get("AccessKeyId") is not None:
-            sys.stderr.write("Using config file for credentials\n")
-
+        # Setting up AWS creds based on environment variables id env vars don't
+        # exist setting var value to None
         if data.get("AccessKeyId") is None:
             data['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID", None)
             data['SecretAccessKey'] = os.environ.get("AWS_SECRET_ACCESS_KEY", None)
             data['Token'] = os.environ.get("AWS_SESSION_TOKEN", None)
-            if data.get("AccessKeyId") is not None:
-                sys.stderr.write("Using environment variables for credentials\n")
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
