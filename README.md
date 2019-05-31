@@ -54,7 +54,6 @@ Example of s3auth.conf file:
 AccessKeyId = myaccesskey
 SecretAccessKey = mysecretaccesskey
 Region = 'us-east-1'
-Token = ''
 ```
 
 ## Usage

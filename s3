@@ -115,8 +115,8 @@ class AWSCredentials(object):
         if self.region is None or self.region == '':
             raise Exception("Region required")
 
-        # Setting up AWS creds based on environment variables id env vars don't
-        # exist setting var value to None
+        # Setting up AWS creds based on environment variables if env vars
+        # doesn't exist setting var value to None
         if data.get("AccessKeyId") is None:
             data['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID", None)
             data['SecretAccessKey'] = os.environ.get(
