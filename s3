@@ -48,12 +48,14 @@ class AWSCredentials(object):
     def __init__(self, config_file=None):
         self.conf_file = config_file
         host = 'http://169.254.169.254'
-        path = '/latest/meta-data/iam/security-credentials/'
-        self.meta_data_uri = urlparse.urljoin(host, path)
+        path_sec_cred = '/latest/meta-data/iam/security-credentials/'
+        path_instance_metadata = '/latest/dynamic/instance-identity/document'
+        self.credentials_metadata = urlparse.urljoin(host, path_sec_cred)
+        self.instance_metadata = urlparse.urljoin(host, path_instance_metadata)
 
     def __get_role(self):
         # Read IAM role from AWS metadata store
-        request = urllib2.Request(self.meta_data_uri)
+        request = urllib2.Request(self.credentials_metadata)
 
         response = None
 
@@ -139,7 +141,7 @@ class AWSCredentials(object):
 
         self.region = data.get('Region')
         if self.region is None or self.region == '':
-            self.region = self.__request_json('http://169.254.169.254/latest/dynamic/instance-identity/document')['region']
+            self.region = self.__request_json(self.instance_metadata)['region']
 
         # Setting up AWS creds based on environment variables if env vars
         # doesn't exist setting var value to None
@@ -151,7 +153,8 @@ class AWSCredentials(object):
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
-            data = self.__request_json(urlparse.urljoin(self.meta_data_uri, self.iamrole))
+            data = self.__request_json(urlparse.urljoin(self.credentials_metadata,
+                                                        self.iamrole))
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
