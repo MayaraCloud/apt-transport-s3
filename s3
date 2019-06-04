@@ -217,9 +217,9 @@ class AWSCredentials(object):
  name for bucket")
 
         scheme = 'https'
-        host = 's3.{}.amazonaws.com'.format(self.region)
         bucket = uri_parsed.netloc
-        path = '{}{}'.format(bucket, urllib2.quote(uri_parsed.path, safe='-._~/+'))
+        host = '{}.s3.{}.amazonaws.com'.format(bucket, self.region)
+        path = '{}'.format(urllib2.quote(uri_parsed.path, safe='-._~/+'))
 
         s3url = urlparse.urlunparse(
             (
