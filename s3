@@ -219,7 +219,7 @@ class AWSCredentials(object):
         scheme = 'https'
         bucket = uri_parsed.netloc
         host = '{}.s3.{}.amazonaws.com'.format(bucket, self.region)
-        path = '{}'.format(urllib2.quote(uri_parsed.path, safe='-._~/+'))
+        path = '{}'.format(urllib2.quote(uri_parsed.path, safe='-._~/'))
 
         s3url = urlparse.urlunparse(
             (
@@ -443,15 +443,6 @@ class S3_method(object):
                     os.environ['http_proxy'] = value
                     os.environ['https_proxy'] = value
 
-    # We need to be able to quote specific characters to support S3
-    # lookups, something urllib and friends don't do easily
-    def quote(self, s, unsafe):
-        res = list(s)
-        for i in range(len(res)):
-            c = res[i]
-            if c in unsafe:
-                res[i] = '%%%02X' % ord(c)
-        return ''.join(res)
 
     def format_error_response(self, response):
         """Extracts Info from AWS Error Repsonse and returns a formatted string
