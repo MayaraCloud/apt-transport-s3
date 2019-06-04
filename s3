@@ -74,8 +74,7 @@ class AWSCredentials(object):
             except urllib2.URLError as e:
                 if hasattr(e, 'reason'):
                     raise Exception("URL error reason: %s, probable cause is \
-                                    that you don't have IAM role on this \
-                                    machine" % e.reason)
+ that you don't have IAM role on this machine" % e.reason)
                 elif hasattr(e, 'code'):
                     raise Exception("Server error code: %s" % e.code)
             finally:
@@ -90,7 +89,8 @@ class AWSCredentials(object):
         Example config file content:
             AccessKeyId = mykey
             SecretAccessKey = mysecretkey
-            Token = '' # this can/have to be empty
+            Region = eu-west-2 # this is obligatory if instance is in different
+                                 region then apt repo
         """
 
         # Checking if 'file' exists, if it does read it
@@ -130,7 +130,7 @@ class AWSCredentials(object):
         """
         Read IAM credentials from AWS metadata store.
         Note: This method should be explicitly called after constructing new
-            object, as in 'explicit is better than implicit'.
+              object, as in 'explicit is better than implicit'.
         """
         data = {}
 
@@ -193,7 +193,7 @@ class AWSCredentials(object):
                                              xmlResponse.find("Message").text)
             if e.code == 301:
                 e.msg = "{} - Set s3auth.conf region to match bucket 'Region':\
-                        bucket may not be in {}".format(e, self.region)
+ bucket may not be in {}".format(e, self.region)
 
             return e
         # For other errors, throw an exception directly
@@ -214,7 +214,7 @@ class AWSCredentials(object):
         # otherwise TLS certs are broken
         if '.' in uri_parsed.netloc:
             raise Exception("uri should not include fully qualified domain \
-                            name for bucket")
+ name for bucket")
 
         # quote path for +, ~, and spaces
         # see bugs.launchpad.net #1003633 and #1086997
