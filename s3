@@ -34,9 +34,15 @@ from configobj import ConfigObj
 
 RETRIES = 5
 
+SPECIAL_REGION_ENDPOINTS = {
+    'cn-north-1': 's3.cn-north-1.amazonaws.com.cn',
+    'cn-northwest-1': 's3.cn-northwest-1.amazonaws.com.cn'
+}
+
 
 def wait_time(c):
     return pow(2, c) - 1
+
 
 
 class AWSCredentials(object):
@@ -157,8 +163,12 @@ class AWSCredentials(object):
                                                         self.iamrole))
 
         if data.get('Endpoint') is None:
-            self.host = 's3.{}.amazonaws.com'.format(self.region)
-        self.host = data['Endpoint']
+            if self.region not in SPECIAL_REGION_ENDPOINTS.keys():
+                self.host = 's3.{}.amazonaws.com'.format(self.region)
+            else:
+                self.host = SPECIAL_REGION_ENDPOINTS[self.region]
+        else:
+            self.host = data['Endpoint']
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
