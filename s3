@@ -44,7 +44,6 @@ def wait_time(c):
     return pow(2, c) - 1
 
 
-
 class AWSCredentials(object):
     """
     Class for dealing with IAM role credentials from meta-data server and later
@@ -456,7 +455,6 @@ class S3_method(object):
                 if key == 'Acquire::http::Proxy':
                     os.environ['http_proxy'] = value
                     os.environ['https_proxy'] = value
-
 
     def format_error_response(self, response):
         """Extracts Info from AWS Error Repsonse and returns a formatted string
