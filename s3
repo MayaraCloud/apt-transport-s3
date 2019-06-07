@@ -131,6 +131,34 @@ class AWSCredentials(object):
 
         raise Exception("request for {} timed out".format(url))
 
+    def __get_region(self, config):
+        # try to load region from config file
+        region = config.get('Region')
+        # if region is not defied load it from instance metadata
+        if region is None or region == '':
+            region = self.__request_json(self.instance_metadata)['region']
+
+        return region
+
+    def __get_endpoint(self, config):
+        """ We assume that if endpoint attribute exists in the config this
+        takes priority over Region and bucket URL construction. If it doesn't
+        exist checking Region and comparing it to the dict containing special
+        regions (slightly different fqdn's). If it's there use it, if not
+        construct host for bucket url using Region from the config or from the
+        instance metadata (if bucket and host are in the same region it will
+        work, if not error will be thrown)
+        """
+        if config.get('Endpoint') is not None:
+            host = config['Endpoint']
+        else:
+            if self.region in SPECIAL_REGION_ENDPOINTS.keys():
+                host = SPECIAL_REGION_ENDPOINTS[self.region]
+            else:
+                host = 's3.{}.amazonaws.com'.format(self.region)
+
+        return host
+
     def get_credentials(self):
         """
         Read IAM credentials from AWS metadata store.
@@ -144,9 +172,8 @@ class AWSCredentials(object):
         except:
             pass
 
-        self.region = data.get('Region')
-        if self.region is None or self.region == '':
-            self.region = self.__request_json(self.instance_metadata)['region']
+        self.region = self.__get_region(data)
+        self.host = self.__get_endpoint(data)
 
         # Setting up AWS creds based on environment variables if env vars
         # doesn't exist setting var value to None
@@ -160,14 +187,6 @@ class AWSCredentials(object):
             self.__get_role()
             data = self.__request_json(urlparse.urljoin(self.credentials_metadata,
                                                         self.iamrole))
-
-        if data.get('Endpoint') is None:
-            if self.region not in SPECIAL_REGION_ENDPOINTS.keys():
-                self.host = 's3.{}.amazonaws.com'.format(self.region)
-            else:
-                self.host = SPECIAL_REGION_ENDPOINTS[self.region]
-        else:
-            self.host = data['Endpoint']
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
