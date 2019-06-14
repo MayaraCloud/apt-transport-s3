@@ -1,3 +1,18 @@
+2019-06-14 Marcin Kulisz <debian@kulisz.net>
+
+  * Switching to VHost style urls
+  * PEP8 compliance
+  * Add support for special AWS regions (cn-north-1 and cn-northwest-1)
+  * Add support for alternate services with 'Endpoint'
+  * Switching to VHost style urls
+  * Adjusting metadata naming convention
+  * Request region from metadata when not configured
+  * Token doesn't have to be an empty string anymore
+  * Updating info about breaking TLS if bucket name
+  * Removing logging to stderr info about from where
+  * Copyright and repo url updates
+  * Higher detail in error handling and information from APT Message
+
 2015-09-23 Marcin Kulisz <debian@kulisz.net>
 
   * Fixing new line issue in Authorization header caused by more restrictive
