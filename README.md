@@ -20,7 +20,9 @@ access to AWS metadata server on 169.254.169.254.  They are also taken from the
 usual environment variables.
 
 ## License & Copyright
-    # Copyright (C) 2014 Bashton Ltd.
+    # Copyright (C) 2018- Mayara Cloud Ltd.
+    # Copyright (C) 2016-2018 Claranet Ltd.
+    # Copyright (C) 2014-2016 Bashton Ltd.
     #
     # This program is free software; you can redistribute it and/or modify
     # it under the terms of the GNU General Public License as published by
@@ -45,13 +47,17 @@ usual environment variables.
 /etc/apt/s3auth.conf or <a href="http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html">IAM role</a>
 can provide credentials required for using private apt repositories.
 
-NOTE: Region MUST match the region the buckets are stored in and if not defined defaults to us-east-1.
+NOTE: Region MUST match the region the buckets are stored in and if not defined
+it will try to fetch it from the metadata service.
+
+Setting Endpoint allows for using providers other than Amazon AWS. If set, Endpoint disregards Region.
 
 Example of s3auth.conf file:
 ```
 AccessKeyId = myaccesskey
 SecretAccessKey = mysecretaccesskey
 Region = 'us-east-1'
+Endpoint = 'nyc3.digitaloceanspaces.com'
 ```
 
 ## Usage
@@ -66,9 +72,16 @@ as an APT configuration directive (for example in
 
 `Acquire::http::Proxy "http://myproxy:3128/";`
 
+Bucket name hosting repo can not contain dots in it's name as this (according
+to
+[AWS S3 naming convention](https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html))
+will invalidate virtual host style paths TLS certificates.
+
 ## Testing
-The module will run in interactive mode.  It accepts on `stdin` and outputs on `stdout`.  The messages it accepts on stdin
-are in the following format and [documented here](http://www.fifi.org/doc/libapt-pkg-doc/method.html/index.html#abstract).
+The module will run in interactive mode.  It accepts on `stdin` and outputs on
+`stdout`.  The messages it accepts on stdin
+are in the following format and
+[documented here](http://www.fifi.org/doc/libapt-pkg-doc/method.html/index.html#abstract).
 
 ```
 600 URI Acquire
@@ -79,7 +92,9 @@ Index-File:true
 
 ```
 
-This message will trigger an s3 get from the above bucket and key and save it to Filename.  It needs a blank line after the message to trigger the processing by the s3 method.
+This message will trigger an s3 get from the above bucket and key and save it to
+Filename.  It needs a blank line after the message to trigger the processing by
+the s3 method.
 
 ## Contribution
 If you want to contribute a patch via PR please create it against development
