@@ -1,3 +1,39 @@
+apt-transport-s3 (1.4.0-1) UNRELEASED; urgency=medium
+
+  [ agx ]
+  * Making proper defaults for the token
+
+  [ George Alton ]
+  * Adds more detailed error information to APT Message
+
+  [ Steven Aerts ]
+  * Request region from metadata when not configured
+  * Escape S3 paths correctly
+
+  [ Andrew James ]
+  * Add support for alternate services with 'Endpoint'
+
+  [ Difan Zhang ]
+  * Add support for special AWS regions (cn-north-1 and cn-northwest-1).
+
+  [ Marcin Kulisz ]
+  * Small adjustment to d/gbp
+  * Update to repo location and copyrights
+  * Man page update
+  * New upstream
+    - Copyright and repo url updates in readme and else where
+    - Removing logging to stderr info about from where
+    - Updating info about breaking TLS if bucket name
+    - Removing code duplication
+    - PEP8 compliance
+    - Adjusting meta data naming convention
+    - Minor err msg layout fixes
+    - Switching to VHost style urls
+    - Fixing url quotation and removing quote method
+    - Changing Region & Endpoint approach
+
+ -- Marcin Kulisz <debian@kulisz.net>  Fri, 14 Jun 2019 12:36:19 +0100
+
 apt-transport-s3 (1.3.0-1) unstable; urgency=medium
 
   * Added build-dep on dh-python and bumping up std-ver to 4.1.1
