@@ -1,4 +1,4 @@
-apt-transport-s3 (1.4.0-1) UNRELEASED; urgency=medium
+apt-transport-s3 (1.4.0-1) unstable; urgency=medium
 
   [ agx ]
   * Making proper defaults for the token
@@ -31,8 +31,13 @@ apt-transport-s3 (1.4.0-1) UNRELEASED; urgency=medium
     - Switching to VHost style urls
     - Fixing url quotation and removing quote method
     - Changing Region & Endpoint approach
+  * std-ver bump and copyright url fix
+  * New (stripped) upstream key
+  * Added d/upstream/metadata
+  * DH compat bump to 12
+  * Removal of the python version field from the source package
 
- -- Marcin Kulisz <debian@kulisz.net>  Fri, 14 Jun 2019 12:36:19 +0100
+ -- Marcin Kulisz <debian@kulisz.net>  Mon, 24 Jun 2019 15:42:39 +0100
 
 apt-transport-s3 (1.3.0-1) unstable; urgency=medium
 
