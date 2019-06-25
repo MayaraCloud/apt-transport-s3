@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 # Copyright (C) 2018- Mayara Cloud Ltd.
 # Copyright (C) 2016-2018 Claranet Ltd.
 # Copyright (C) 2014-2016 Bashton Ltd.
@@ -18,8 +18,9 @@
 #
 # https://github.com/MayaraCloud/apt-transport-s3
 
-import urllib2
-import urlparse
+import urllib.request
+import urllib.error
+import urllib.parse
 import time
 import hashlib
 import hmac
@@ -55,18 +56,19 @@ class AWSCredentials(object):
         host = 'http://169.254.169.254'
         path_sec_cred = '/latest/meta-data/iam/security-credentials/'
         path_instance_metadata = '/latest/dynamic/instance-identity/document'
-        self.credentials_metadata = urlparse.urljoin(host, path_sec_cred)
-        self.instance_metadata = urlparse.urljoin(host, path_instance_metadata)
+        self.credentials_metadata = urllib.parse.urljoin(host, path_sec_cred)
+        self.instance_metadata = urllib.parse.urljoin(
+            host, path_instance_metadata)
 
     def __get_role(self):
         # Read IAM role from AWS metadata store
-        request = urllib2.Request(self.credentials_metadata)
+        request = urllib.request.Request(self.credentials_metadata)
 
         response = None
 
         for i in range(0, RETRIES):
             try:
-                response = urllib2.urlopen(request, None, 10)
+                response = urllib.request.urlopen(request, None, 10)
                 self.iamrole = response.read()
                 break
             except ssl.SSLError as e:
@@ -76,7 +78,7 @@ class AWSCredentials(object):
                     raise e
             except socket.timeout:
                 time.sleep(wait_time(i + 1))
-            except urllib2.URLError as e:
+            except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
                     raise Exception("URL error reason: %s, probable cause is \
  that you don't have IAM role on this machine" % e.reason)
@@ -106,12 +108,12 @@ class AWSCredentials(object):
             raise Exception("Config file: %s doesn't exist" % self.conf_file)
 
     def __request_json(self, url):
-        request = urllib2.Request(url)
+        request = urllib.request.Request(url)
         response = None
 
         for i in range(0, RETRIES):
             try:
-                response = urllib2.urlopen(request, None, 30)
+                response = urllib.request.urlopen(request, None, 30)
                 return json.loads(response.read())
             except ssl.SSLError as e:
                 if 'timed out' in e.message:
@@ -120,7 +122,7 @@ class AWSCredentials(object):
                     raise e
             except socket.timeout:
                 time.sleep(wait_time(i + 1))
-            except urllib2.URLError as e:
+            except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
                     raise Exception("URL error reason: %s" % e.reason)
                 elif hasattr(e, 'code'):
@@ -152,7 +154,7 @@ class AWSCredentials(object):
         if config.get('Endpoint') is not None:
             host = config['Endpoint']
         else:
-            if self.region in SPECIAL_REGION_ENDPOINTS.keys():
+            if self.region in list(SPECIAL_REGION_ENDPOINTS.keys()):
                 host = SPECIAL_REGION_ENDPOINTS[self.region]
             else:
                 host = 's3.{}.amazonaws.com'.format(self.region)
@@ -185,8 +187,8 @@ class AWSCredentials(object):
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
-            data = self.__request_json(urlparse.urljoin(self.credentials_metadata,
-                                                        self.iamrole))
+            data = self.__request_json(urllib.parse.urljoin(self.credentials_metadata,
+                                                            self.iamrole))
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
@@ -212,10 +214,10 @@ class AWSCredentials(object):
     def uriopen(self, uri):
         """uriopen(uri) open the remote file and return a file object."""
         try:
-            return urllib2.urlopen(self._request(uri), None, 30)
-        except urllib2.HTTPError as e:
+            return urllib.request.urlopen(self._request(uri), None, 30)
+        except urllib.error.HTTPError as e:
             # HTTPError is a "file like object" similar to what
-            # urllib2.urlopen returns, so return it and let caller
+            # urllib.request.urlopen returns, so return it and let caller
             # deal with the error code
             if e.code == 400:
                 # token errors are buried in 400 messages so expose
@@ -229,16 +231,16 @@ class AWSCredentials(object):
 
             return e
         # For other errors, throw an exception directly
-        except urllib2.URLError as e:
+        except urllib.error.URLError as e:
             if hasattr(e, 'reason'):
                 raise Exception("URL error reason: %s" % e.reason)
             elif hasattr(e, 'code'):
                 raise Exception("Server error code: %s" % e.code)
-        except urllib2.socket.timeout:
+        except socket.timeout:
             raise Exception("Socket timeout")
 
     def _request(self, uri):
-        uri_parsed = urlparse.urlparse(uri)
+        uri_parsed = urllib.parse.urlparse(uri)
         # Below if statement is to accommodate AWS guidance in regards buckets
         # naming convention presented in
         # https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html
@@ -251,9 +253,9 @@ class AWSCredentials(object):
         scheme = 'https'
         bucket = uri_parsed.netloc
         host = '{}.{}'.format(bucket, self.host)
-        path = '{}'.format(urllib2.quote(uri_parsed.path, safe='-._~/'))
+        path = '{}'.format(urllib.parse.quote(uri_parsed.path, safe='-._~/'))
 
-        s3url = urlparse.urlunparse(
+        s3url = urllib.parse.urlunparse(
             (
                 scheme,
                 host,
@@ -264,7 +266,7 @@ class AWSCredentials(object):
             )
         )
 
-        request = urllib2.Request(s3url)
+        request = urllib.request.Request(s3url)
 
         request.add_header('x-amz-content-sha256', self._payload_hash(request))
 
@@ -312,7 +314,7 @@ class AWSCredentials(object):
 
     def _canonical_request(self, request, host, amzdate):
 
-        canonical_uri = request.get_selector()
+        canonical_uri = request.selector
         canonical_querystring = ''
 
         canonical_headers = 'host:' + host + '\n' \
@@ -330,7 +332,7 @@ class AWSCredentials(object):
             + self._signed_headers() + '\n' \
             + self._payload_hash(request)
 
-        return hashlib.sha256(canonical_request).hexdigest()
+        return hashlib.sha256(canonical_request.encode('utf-8')).hexdigest()
 
     def _signed_headers(self):
         signed_headers = 'host;x-amz-content-sha256;x-amz-date'
@@ -339,9 +341,9 @@ class AWSCredentials(object):
         return signed_headers
 
     def _payload_hash(self, request):
-        payload = request.get_data()
+        payload = request.data
         if payload is None:
-            payload = ''
+            payload = ''.encode('utf-8')
 
         return hashlib.sha256(payload).hexdigest()
 
@@ -377,7 +379,7 @@ class APTMessage(object):
 
     def encode(self):
         result = '{0} {1}\n'.format(self.code, self.MESSAGE_CODES[self.code])
-        for item in self.headers.keys():
+        for item in list(self.headers.keys()):
             if self.headers[item] is not None:
                 result += '{0}: {1}\n'.format(item, self.headers[item])
         return result + '\n'
