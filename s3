@@ -363,20 +363,6 @@ class APTMessage(object):
         self.code = code
         self.headers = headers
 
-    def process(self, lines):
-        status_line = lines.pop(0)
-        self.code = int(status_line.split()[0])
-        self.headers = []
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            parts = [p.strip() for p in line.split(':', 1)]
-            if len(parts) != 2:
-                continue
-            self.headers.append(parts)
-        return self(code, headers)
-
     def encode(self):
         result = '{0} {1}\n'.format(self.code, self.MESSAGE_CODES[self.code])
         for item in list(self.headers.keys()):
