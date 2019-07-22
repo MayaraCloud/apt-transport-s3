@@ -288,6 +288,10 @@ class AWSCredentials(object):
         return request
 
     def _authorization_header(self, canonical_request, amzdate):
+        """
+        AWS documentation for signing requests with v4Sign:
+            https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
+        """
         datestamp = amzdate.split('T')[0]
 
         algorithm = 'AWS4-HMAC-SHA256'
@@ -454,8 +458,12 @@ class S3_method(object):
             else:
                 return 100
 
-    # configure
     def configure(self, message):
+        """
+        Reads APT configuration (dict) and checks for proxy settings by reading
+        all available options with in 'Config-Item' and lookinup
+        'Acquire::http::Proxy'
+        """
         for item in message['Config-Item']:
             if item.startswith('Acquire::http::Proxy'):
                 (key, value) = item.split('=', 1)
