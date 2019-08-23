@@ -1,3 +1,7 @@
+2019-08-23 Marcin Kulisz <debian@kulisz.net>
+
+  * Working Python3 version
+
 2019-06-14 Marcin Kulisz <debian@kulisz.net>
 
   * Switching to VHost style urls
