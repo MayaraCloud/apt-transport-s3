@@ -1,4 +1,4 @@
 version=3
 
 opts="filenamemangle=s/(?:.*)?v?(\d[\d\.]*)\.tar\.gz/apt-transport-s3-$1.tar.gz/,pgpsigurlmangle=s/$/.asc/" \
-  https://github.com/BashtonLtd/apt-transport-s3/releases .*/v\d\S*/apt-transport-s3-?(\d[\d\.]*)\.tar\.gz
+  https://github.com/MayaraCloud/apt-transport-s3/releases .*/v\d\S*/apt-transport-s3-?(\d[\d\.]*)\.tar\.gz
