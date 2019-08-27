@@ -2,18 +2,30 @@ apt-transport-s3 for Debian
 -----------------------
 
 The apt-transport-s3 source is obtained from
-<https://github.com/BashtonLtd/apt-transport-s3> by the release tag.
+<https://github.com/MayaraCloud/apt-transport-s3> by the release tag.
 The Debian packaging tracks the latest tarball from the above url.
 
 The apt-transport-s3 package source is maintained within above github repository
-on Debian branch.
+on Debian branches named accordingly to DEP-14
+(https://dep-team.pages.debian.net/deps/dep14/).
 
-  * 'master' branch is where we're keeping source code of apt-transport-s3
+  * Starting from upload of version 2.0.0-1 uploads to Debian are made with
+    **dgit** tool
+    ** after upstream release on Github following set off commands should allow
+      for source only Debian upload
+      - origtargz (for fetching orig tarball for the new release it should use
+        uscan and for new Debian version it should fetch code from Debian repos)
+      - dgit --gbp sbuild (or build depends on local setup)
+      - dgit --gbp push-source
+
+  * 'master' branch is where upstream release branch is located
+  * 'development' branch is where upstream development is happening, all
+    pull|merge requests or patches send should be done against this branch
   * The 'debian/*' branchs are for keeping Debian package specific files (per
     suit) and merging in (with --no-ff) from 'master' branch to build packages.
-    ** There are no Debian specific patches as package mainainters are also
+    ** There are no Debian specific patches as package maintainers are also
       the upstream
-  * We carry upstream's tags in 'debian' branch prefixed with 'upstream/'
+  * We carry upstream tags on Debian branch prefixed with 'upstream/'
     applied on master merge into debian baranch (with --no-ff)
     ex.: upstream/1.0.1
   * We prefix our tags with 'debian/' e.g. debian/1.0.1-1
