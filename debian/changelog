@@ -1,3 +1,21 @@
+apt-transport-s3 (2.0.0-1) unstable; urgency=medium
+
+  [ Hayden Myers ]
+  * Python3 Fixes.
+
+  [ Marcin Kulisz ]
+  * New upstream
+    - Initial py3 implementation
+    - Removing unused code
+    - Added comments into the code
+    - Changelog update
+  * Migrating to debhelper 12 specific debhelper-compat mode
+  * Std-ver bump to 4.4.0
+  * Repointed d/watch to new location
+  * Adjusting package to py3
+
+ -- Marcin Kulisz <debian@kulisz.net>  Tue, 27 Aug 2019 14:22:40 +0100
+
 apt-transport-s3 (1.4.0-1) unstable; urgency=medium
 
   [ agx ]
