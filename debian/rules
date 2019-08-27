@@ -5,10 +5,7 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
 %:
-	dh $@ --with python2
+	dh $@ --with python3
 
 override_dh_installchangelogs:
 	dh_installchangelogs CHANGELOG
-
-override_dh_python2:
-	dh_python2 --depends=python
