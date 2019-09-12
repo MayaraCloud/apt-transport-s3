@@ -1,0 +1,6 @@
+# Creation of this file is documented at:
+#   https://salsa.debian.org/salsa-ci-team/pipeline#basic-use
+---
+include:
+  - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
+  - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
