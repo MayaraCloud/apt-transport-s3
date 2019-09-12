@@ -1,15 +1,16 @@
 Source: apt-transport-s3
 Section: admin
 Priority: optional
-Maintainer: Marcin Kulisz <debian@kulisz.net>
-Uploaders: David Watson <dwatson@debian.org>
+Maintainer: Debian Cloud Team <debian-cloud@lists.debian.org>
+Uploaders: Marcin Kulisz <debian@kulisz.net>,
+           David Watson <dwatson@debian.org>
 Build-Depends: python3,
                debhelper-compat (= 12),
                dh-python
 Standards-Version: 4.4.0
 Homepage: https://github.com/MayaraCloud/apt-transport-s3
-Vcs-Git: https://github.com/MayaraCloud/apt-transport-s3.git
-Vcs-Browser: https://github.com/MayaraCloud/apt-transport-s3/tree/debian/sid
+Vcs-Git: https://salsa.debian.org/cloud-team/apt-transport-s3.git
+Vcs-Browser: https://salsa.debian.org/cloud-team/apt-transport-s3/tree/debian/sid
 
 Package: apt-transport-s3
 Architecture: all
