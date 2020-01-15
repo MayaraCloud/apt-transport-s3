@@ -69,7 +69,7 @@ class AWSCredentials(object):
         for i in range(0, RETRIES):
             try:
                 response = urllib.request.urlopen(request, None, 10)
-                self.iamrole = response.read()
+                self.iamrole = str(response.read(), "utf-8")
                 break
             except ssl.SSLError as e:
                 if 'timed out' in e.message:
@@ -456,7 +456,7 @@ class S3_method(object):
                 except Exception as e:
                     self.fail(e.__class__.__name__ + ": " + str(e))
             else:
-                return 100
+                self.fail(str(message['_text']))
 
     def configure(self, message):
         """
