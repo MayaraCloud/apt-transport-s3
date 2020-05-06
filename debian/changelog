@@ -2,6 +2,8 @@ apt-transport-s3 (2.0.0-2) UNRELEASED; urgency=medium
 
   * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository,
     Repository-Browse.
+  * Remove obsolete field Name from debian/upstream/metadata (already
+    present in machine-readable debian/copyright).
 
  -- Debian Janitor <janitor@jelmer.uk>  Wed, 06 May 2020 21:52:43 +0000
 
