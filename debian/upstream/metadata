@@ -1,2 +1,5 @@
 Name: apt-transport-s3
-Repository: https://github.com/MayaraCloud/apt-transport-s3
+Bug-Database: https://github.com/MayaraCloud/apt-transport-s3/issues
+Bug-Submit: https://github.com/MayaraCloud/apt-transport-s3/issues/new
+Repository: https://github.com/MayaraCloud/apt-transport-s3.git
+Repository-Browse: https://github.com/MayaraCloud/apt-transport-s3
