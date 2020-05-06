@@ -7,7 +7,7 @@ Uploaders: Marcin Kulisz <debian@kulisz.net>,
 Build-Depends: python3,
                debhelper-compat (= 12),
                dh-python
-Standards-Version: 4.4.0
+Standards-Version: 4.5.0
 Homepage: https://github.com/MayaraCloud/apt-transport-s3
 Vcs-Git: https://salsa.debian.org/cloud-team/apt-transport-s3.git
 Vcs-Browser: https://salsa.debian.org/cloud-team/apt-transport-s3/tree/debian/sid
