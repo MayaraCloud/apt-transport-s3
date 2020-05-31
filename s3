@@ -40,6 +40,10 @@ SPECIAL_REGION_ENDPOINTS = {
     'cn-northwest-1': 's3.cn-northwest-1.amazonaws.com.cn'
 }
 
+TOKEN_TTL_SECONDS = 21600
+TOKEN_HEADER = "X-aws-ec2-metadata-token"
+TOKEN_HEADER_TTL = "X-aws-ec2-metadata-token-ttl-seconds"
+
 
 def wait_time(c):
     return pow(2, c) - 1
@@ -54,15 +58,48 @@ class AWSCredentials(object):
     def __init__(self, config_file=None):
         self.conf_file = config_file
         host = 'http://169.254.169.254'
+        path_session_token = 'latest/api/token'
         path_sec_cred = '/latest/meta-data/iam/security-credentials/'
         path_instance_metadata = '/latest/dynamic/instance-identity/document'
+        self.session_token_metadata = urllib.parse.urljoin(host, path_session_token)
         self.credentials_metadata = urllib.parse.urljoin(host, path_sec_cred)
         self.instance_metadata = urllib.parse.urljoin(
             host, path_instance_metadata)
+        self.__imdsv2_ensure_token()
+
+    def __imdsv2_ensure_token(self):
+        # Get IMDSv2 session token
+        request = urllib.request.Request(self.session_token_metadata, method='PUT', headers={TOKEN_HEADER_TTL: TOKEN_TTL_SECONDS})
+
+        response = None
+
+        for i in range(0, RETRIES):
+            try:
+                response = urllib.request.urlopen(request, None, 10)
+                self.session_token = response.read()
+                break
+            except ssl.SSLError as e:
+                if 'IMDSv2 timed out' in e.message:
+                    time.sleep(wait_time(i + 1))
+                else:
+                    raise e
+            except socket.timeout:
+                time.sleep(wait_time(i + 1))
+            except urllib.error.URLError as e:
+                if hasattr(e, 'reason'):
+                    raise Exception("IMDSv2 URL error reason: %s, probable cause is \
+ that you don't have IAM role on this machine" % e.reason)
+                elif hasattr(e, 'code'):
+                    raise Exception("Server error code: %s" % e.code)
+            finally:
+                if response:
+                    response.close()
+        else:
+            raise Exception("IMDSv2 session token request timed out")
 
     def __get_role(self):
         # Read IAM role from AWS metadata store
-        request = urllib.request.Request(self.credentials_metadata)
+        request = urllib.request.Request(self.credentials_metadata, headers={TOKEN_HEADER: self.session_token})
 
         response = None
 
@@ -108,7 +145,7 @@ class AWSCredentials(object):
             raise Exception("Config file: %s doesn't exist" % self.conf_file)
 
     def __request_json(self, url):
-        request = urllib.request.Request(url)
+        request = urllib.request.Request(url, headers={TOKEN_HEADER: self.session_token})
         response = None
 
         for i in range(0, RETRIES):
