@@ -87,10 +87,10 @@ class AWSCredentials(object):
                 time.sleep(wait_time(i + 1))
             except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
-                    raise Exception("IMDSv2 URL error reason: %s, probable cause is \
- that you don't have IAM role on this machine" % e.reason)
+                    raise Exception("IMDSv2 URL error reason: {}, probable cause is \
+ that you don't have IAM role on this machine".format(e.reason))
                 elif hasattr(e, 'code'):
-                    raise Exception("Server error code: %s" % e.code)
+                    raise Exception("Server error code: {}".format(e.code))
             finally:
                 if response:
                     response.close()
@@ -120,10 +120,10 @@ class AWSCredentials(object):
                 time.sleep(wait_time(i + 1))
             except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
-                    raise Exception("URL error reason: %s, probable cause is \
- that you don't have IAM role on this machine" % e.reason)
+                    raise Exception("URL error reason: {}, probable cause is \
+ that you don't have IAM role on this machine".format(e.reason))
                 elif hasattr(e, 'code'):
-                    raise Exception("Server error code: %s" % e.code)
+                    raise Exception("Server error code: {}".format(e.code))
             finally:
                 if response:
                     response.close()
@@ -145,7 +145,7 @@ class AWSCredentials(object):
             config = ConfigObj(os.path.expanduser(self.conf_file))
             return config
         else:
-            raise Exception("Config file: %s doesn't exist" % self.conf_file)
+            raise Exception("Config file: {} doesn't exist".format(self.conf_file))
 
     def __request_json(self, url):
         if not self.session_token:
@@ -167,9 +167,9 @@ class AWSCredentials(object):
                 time.sleep(wait_time(i + 1))
             except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
-                    raise Exception("URL error reason: %s" % e.reason)
+                    raise Exception("URL error reason: {}".format(e.reason))
                 elif hasattr(e, 'code'):
-                    raise Exception("Server error code: %s" % e.code)
+                    raise Exception("Server error code: {}".format(e.code))
             finally:
                 if response:
                     response.close()
@@ -276,9 +276,9 @@ class AWSCredentials(object):
         # For other errors, throw an exception directly
         except urllib.error.URLError as e:
             if hasattr(e, 'reason'):
-                raise Exception("URL error reason: %s" % e.reason)
+                raise Exception("URL error reason: gc" % e.reason)
             elif hasattr(e, 'code'):
-                raise Exception("Server error code: %s" % e.code)
+                raise Exception("Server error code: gc" % e.code)
         except socket.timeout:
             raise Exception("Socket timeout")
 
@@ -314,7 +314,7 @@ class AWSCredentials(object):
         request.add_header('x-amz-content-sha256', self._payload_hash(request))
 
         # Create a date for headers and the credential string
-        amzdate = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+        amzdate = datetime.datetime.utcnow().strftime('%Y%m%dT%H%MgcZ')
 
         request.add_header('x-amz-date', amzdate)
 
