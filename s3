@@ -65,7 +65,7 @@ class AWSCredentials(object):
         self.credentials_metadata = urllib.parse.urljoin(host, path_sec_cred)
         self.instance_metadata = urllib.parse.urljoin(
             host, path_instance_metadata)
-        self.__imdsv2_ensure_token()
+        self.session_token = None
 
     def __imdsv2_ensure_token(self):
         # Get IMDSv2 session token
@@ -98,6 +98,9 @@ class AWSCredentials(object):
             raise Exception("IMDSv2 session token request timed out")
 
     def __get_role(self):
+        if not self.session_token:
+             self.__imdsv2_ensure_token()
+
         # Read IAM role from AWS metadata store
         request = urllib.request.Request(self.credentials_metadata, headers={TOKEN_HEADER: self.session_token})
 
@@ -145,6 +148,9 @@ class AWSCredentials(object):
             raise Exception("Config file: %s doesn't exist" % self.conf_file)
 
     def __request_json(self, url):
+        if not self.session_token:
+             self.__imdsv2_ensure_token()
+
         request = urllib.request.Request(url, headers={TOKEN_HEADER: self.session_token})
         response = None
 
