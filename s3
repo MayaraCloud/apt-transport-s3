@@ -527,7 +527,7 @@ class S3_method(object):
         """
         try:
             error = ET.fromstring(response.read())
-        except xml.etree.ElementTree.ParseError:
+        except ET.ParseError:
             return ''
 
         code = error.find('Code')
