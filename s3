@@ -314,7 +314,7 @@ class AWSCredentials(object):
         request.add_header('x-amz-content-sha256', self._payload_hash(request))
 
         # Create a date for headers and the credential string
-        amzdate = datetime.datetime.utcnow().strftime('%Y%m%dT%H%MgcZ')
+        amzdate = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
 
         request.add_header('x-amz-date', amzdate)
 
