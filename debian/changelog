@@ -1,8 +1,35 @@
-apt-transport-s3 (2.0.0-2) unstable; urgency=medium
+apt-transport-s3 (2.1.0-1) unstable; urgency=medium
 
-  * Applying patch fixing string opperations (Closes: #986647)
+  [ Marcin Kulisz ]
+  * Readme.source update for uploads with dgit
+  * Moving packaging to Salsa and under Cloud Team umbrella
+  * Added Salsa CI config
+  * Fixing output for error handling
+  * Fixing access key encoding patch from mihai <mihai.constantin@emnify.com>
+    (Closes: #986647)
+  * Fixing encoding in json.load patch from Nicolas Plessis
+    <nicolas.plessis@auth0.com>
+  * Set upstream metadata fields: Bug-Database, Bug-Submit, Repository,
+    Repository-Browse.
+  * Remove obsolete field Name from debian/upstream/metadata (already
+    present in machine-readable debian/copyright).
+  * Update standards version to 4.5.0, no changes needed.
+  * General debian packaging updates
 
- -- Marcin Kulisz <debian@kulisz.net>  Thu, 03 Jun 2021 20:20:49 +0100
+  [ Vicent Soria Durá ]
+  * Fix iamrole should be a string.
+
+  [ fred-vogt ]
+  * IMDSv2 support
+  * Lazy IMDSv2 token
+
+  [ Cedric Le Coz ]
+  * fix overeager replace in 02c2c6c
+
+  [ Dustin Koupal ]
+  * fix ParseError
+
+ -- Marcin Kulisz <debian@kulisz.net>  Thu, 02 Jun 2022 10:49:07 +0100
 
 apt-transport-s3 (2.0.0-1) unstable; urgency=medium
 
