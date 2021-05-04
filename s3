@@ -230,8 +230,7 @@ class AWSCredentials(object):
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
-            data = self.__request_json(urllib.parse.urljoin(self.credentials_metadata,
-                                                            str(self.iamrole, 'utf-8')))
+            data = self.__request_json(urllib.parse.urljoin(self.credentials_metadata, self.iamrole))
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
