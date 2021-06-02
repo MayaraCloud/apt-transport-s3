@@ -177,6 +177,10 @@ class AWSCredentials(object):
         raise Exception("request for {} timed out".format(url))
 
     def __get_region(self, config):
+        """ We need to know in which region bucket with the repository is, thus
+        this fucntion is going to load it from the config file or instance
+        metadata
+        """
         # try to load region from config file
         region = config.get('Region')
         # if region is not defied load it from instance metadata
