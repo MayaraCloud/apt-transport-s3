@@ -1,3 +1,9 @@
+apt-transport-s3 (2.0.0-2) unstable; urgency=medium
+
+  * Applying patch fixing string opperations (Closes: #986647)
+
+ -- Marcin Kulisz <debian@kulisz.net>  Thu, 03 Jun 2021 20:20:49 +0100
+
 apt-transport-s3 (2.0.0-1) unstable; urgency=medium
 
   [ Hayden Myers ]
