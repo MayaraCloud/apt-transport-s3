@@ -221,16 +221,16 @@ class AWSCredentials(object):
         except:
             pass
 
-        self.region = self.__get_region(data)
-        self.host = self.__get_endpoint(data)
-
         # Setting up AWS creds based on environment variables if env vars
         # doesn't exist setting var value to None
         if data.get("AccessKeyId") is None:
-            data['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID", None)
-            data['SecretAccessKey'] = os.environ.get(
-                "AWS_SECRET_ACCESS_KEY", None)
-            data['Token'] = os.environ.get("AWS_SESSION_TOKEN", None)
+            data['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID")
+            data['SecretAccessKey'] = os.environ.get("AWS_SECRET_ACCESS_KEY")
+            data['Token'] = os.environ.get("AWS_SESSION_TOKEN")
+            data['Region'] = os.environ.get("AWS_REGION")
+
+        self.region = self.__get_region(data)
+        self.host = self.__get_endpoint(data)
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
