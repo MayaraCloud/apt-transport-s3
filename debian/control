@@ -1,7 +1,7 @@
 Source: apt-transport-s3
 Section: admin
 Priority: optional
-Maintainer: Debian Cloud Team <debian-cloud@lists.debian.org>
+Maintainer: Debian Cloud Team <team+cloud@tracker.debian.org>
 Uploaders: Marcin Kulisz <debian@kulisz.net>,
            David Watson <dwatson@debian.org>
 Build-Depends: python3,
