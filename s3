@@ -61,16 +61,20 @@ class AWSCredentials(object):
         path_session_token = 'latest/api/token'
         path_sec_cred = '/latest/meta-data/iam/security-credentials/'
         path_instance_metadata = '/latest/dynamic/instance-identity/document'
-        self.session_token_metadata = urllib.parse.urljoin(host, path_session_token)
+        self.session_token_metadata = urllib.parse.urljoin(host,
+                                                           path_session_token)
         self.credentials_metadata = urllib.parse.urljoin(host, path_sec_cred)
-        self.instance_metadata = urllib.parse.urljoin(
-            host, path_instance_metadata)
+        self.instance_metadata = urllib.parse.urljoin(host,
+                                                      path_instance_metadata)
         self.session_token = None
         self.path_style = False
 
     def __imdsv2_ensure_token(self):
         # Get IMDSv2 session token
-        request = urllib.request.Request(self.session_token_metadata, method='PUT', headers={TOKEN_HEADER_TTL: TOKEN_TTL_SECONDS})
+        request = urllib.request.Request(
+            self.session_token_metadata,
+            method='PUT',
+            headers={TOKEN_HEADER_TTL: TOKEN_TTL_SECONDS})
 
         response = None
 
@@ -88,10 +92,10 @@ class AWSCredentials(object):
                 time.sleep(wait_time(i + 1))
             except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
-                    raise Exception("IMDSv2 URL error reason: {}, probable cause is \
- that you don't have IAM role on this machine".format(e.reason))
+                    raise Exception(f"IMDSv2 URL error reason: {e.reason}, \
+probable cause is that you don't have IAM role on this machine")
                 elif hasattr(e, 'code'):
-                    raise Exception("Server error code: {}".format(e.code))
+                    raise Exception(f"Server error code: {e.code}")
             finally:
                 if response:
                     response.close()
@@ -100,10 +104,12 @@ class AWSCredentials(object):
 
     def __get_role(self):
         if not self.session_token:
-             self.__imdsv2_ensure_token()
+            self.__imdsv2_ensure_token()
 
         # Read IAM role from AWS metadata store
-        request = urllib.request.Request(self.credentials_metadata, headers={TOKEN_HEADER: self.session_token})
+        request = urllib.request.Request(
+            self.credentials_metadata,
+            headers={TOKEN_HEADER: self.session_token})
 
         response = None
 
@@ -121,10 +127,10 @@ class AWSCredentials(object):
                 time.sleep(wait_time(i + 1))
             except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
-                    raise Exception("URL error reason: {}, probable cause is \
- that you don't have IAM role on this machine".format(e.reason))
+                    raise Exception(f"URL error reason: {e.reason}, probable \
+cause is that you don't have IAM role on this machine")
                 elif hasattr(e, 'code'):
-                    raise Exception("Server error code: {}".format(e.code))
+                    raise Exception(f"Server error code: {e.code}")
             finally:
                 if response:
                     response.close()
@@ -146,13 +152,16 @@ class AWSCredentials(object):
             config = ConfigObj(os.path.expanduser(self.conf_file))
             return config
         else:
-            raise Exception("Config file: {} doesn't exist".format(self.conf_file))
+            raise Exception(f"Config file: {self.conf_file} doesn't exist")
 
     def __request_json(self, url):
         if not self.session_token:
-             self.__imdsv2_ensure_token()
+            self.__imdsv2_ensure_token()
 
-        request = urllib.request.Request(url, headers={TOKEN_HEADER: self.session_token})
+        request = urllib.request.Request(
+            url,
+            headers={TOKEN_HEADER: self.session_token})
+
         response = None
 
         for i in range(0, RETRIES):
@@ -168,14 +177,14 @@ class AWSCredentials(object):
                 time.sleep(wait_time(i + 1))
             except urllib.error.URLError as e:
                 if hasattr(e, 'reason'):
-                    raise Exception("URL error reason: {}".format(e.reason))
+                    raise Exception(f"URL error reason: {e.reason}")
                 elif hasattr(e, 'code'):
-                    raise Exception("Server error code: {}".format(e.code))
+                    raise Exception(f"Server error code: {e.code}")
             finally:
                 if response:
                     response.close()
 
-        raise Exception("request for {} timed out".format(url))
+        raise Exception(f"request for {url} timed out")
 
     def __get_region(self, config):
         """ We need to know in which region bucket with the repository is, thus
@@ -250,7 +259,9 @@ class AWSCredentials(object):
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
-            data = self.__request_json(urllib.parse.urljoin(self.credentials_metadata, self.iamrole))
+            data = self.__request_json(urllib.parse.urljoin(
+                self.credentials_metadata,
+                self.iamrole))
 
         self.access_key = data['AccessKeyId']
         if self.access_key is None or self.access_key == '':
@@ -288,16 +299,16 @@ class AWSCredentials(object):
                     e.msg = "{} - {}".format(e,
                                              xmlResponse.find("Message").text)
             if e.code == 301:
-                e.msg = "{} - Set s3auth.conf region to match bucket 'Region':\
- bucket may not be in {}".format(e, self.region)
+                e.msg = f"{e} - Set s3auth.conf region to match bucket \
+'Region': bucket may not be in {self.region}"
 
             return e
         # For other errors, throw an exception directly
         except urllib.error.URLError as e:
             if hasattr(e, 'reason'):
-                raise Exception("URL error reason: gc" % e.reason)
+                raise Exception(f"URL error reason: gc {e.reason}")
             elif hasattr(e, 'code'):
-                raise Exception("Server error code: gc" % e.code)
+                raise Exception(f"Server error code: gc {e.code}")
         except socket.timeout:
             raise Exception("Socket timeout")
 
@@ -351,7 +362,8 @@ class AWSCredentials(object):
         canonical_request = self._canonical_request(request, host, amzdate)
 
         authorization_header = self._authorization_header(
-            canonical_request, amzdate)
+            canonical_request,
+            amzdate)
 
         request.add_header('Authorization', authorization_header)
 
@@ -373,8 +385,9 @@ class AWSCredentials(object):
             + canonical_request
 
         signing_key = self.getSignatureKey(datestamp, 's3')
-        signature = hmac.new(signing_key, string_to_sign.encode(
-            'utf-8'), hashlib.sha256).hexdigest()
+        signature = hmac.new(signing_key,
+                             string_to_sign.encode('utf-8'),
+                             hashlib.sha256).hexdigest()
 
         authorization_header = "{} Credential={}/{}, SignedHeaders={}, Signature={}".format(
             algorithm,
