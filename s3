@@ -66,6 +66,7 @@ class AWSCredentials(object):
         self.instance_metadata = urllib.parse.urljoin(
             host, path_instance_metadata)
         self.session_token = None
+        self.path_style = False
 
     def __imdsv2_ensure_token(self):
         # Get IMDSv2 session token
@@ -208,6 +209,21 @@ class AWSCredentials(object):
 
         return host
 
+    def __get_path_style(self, config) -> bool:
+        """ Check if path style addressing is configured in the config file, if
+        it is return it as bool.
+        If in the config is not a boolean but some rubish throw a type error.
+        """
+        # getting path style from config file
+        path_style = config.get('PathStyle')
+
+        if not isinstance(path_style, bool):
+            raise TypeError("PathStyle must be a boolean value")
+
+        self.path_style = path_style
+
+        return self.path_style
+
     def get_credentials(self):
         """
         Read IAM credentials from AWS metadata store.
@@ -298,8 +314,16 @@ class AWSCredentials(object):
 
         scheme = 'https'
         bucket = uri_parsed.netloc
-        host = '{}.{}'.format(bucket, self.host)
-        path = '{}'.format(urllib.parse.quote(uri_parsed.path, safe='-._~/'))
+        if self.path_style:
+            host = '{}'.format(self.host)
+            path = '/{}{}'.format(bucket, urllib.parse.quote(
+                uri_parsed.path,
+                safe='-._~/'))
+        else:
+            host = '{}.{}'.format(bucket, self.host)
+            path = '{}'.format(urllib.parse.quote(
+                uri_parsed.path,
+                safe='-._~/'))
 
         s3url = urllib.parse.urlunparse(
             (

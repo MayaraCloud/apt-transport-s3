@@ -58,6 +58,7 @@ AccessKeyId = myaccesskey
 SecretAccessKey = mysecretaccesskey
 Region = 'us-east-1'
 Endpoint = 'nyc3.digitaloceanspaces.com'
+PathStyle = True
 ```
 
 ## Usage
