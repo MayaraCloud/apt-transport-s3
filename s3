@@ -389,13 +389,13 @@ cause is that you don't have IAM role on this machine")
                              string_to_sign.encode('utf-8'),
                              hashlib.sha256).hexdigest()
 
-        authorization_header = "{} Credential={}/{}, SignedHeaders={}, Signature={}".format(
+        authorization_header = "{} Credential={}/{}, SignedHeaders={}, \
+Signature={}".format(
             algorithm,
             self.access_key,
             credential_scope,
             self._signed_headers(),
-            signature
-        )
+            signature)
 
         return authorization_header
 
