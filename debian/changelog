@@ -1,3 +1,33 @@
+apt-transport-s3 (2.2.0-1) unstable; urgency=medium
+
+  [ Marcin Kulisz ]
+  * Fixing output for error handling
+  * Fixing access key encoding patch from mihai <mihai.constantin@emnify.com>
+  * Fixing encoding in json.load patch from
+    Nicolas Plessis <nicolas.plessis@auth0.com>
+  * Added doc string to get_regions func
+  * Configuring CodeQL for Python
+  * Update to maintainer field
+  * Added path style URI addressing
+  * Redoing strings formatting & fixing too long lines
+  * One more long line fix
+  * README: Minimal access policy added & general update
+  * README: code alignment update
+  * Minor fixes to GH CodeQL
+  * Fixing d/watch
+  * Updating gbp.conf for upstream branch
+  * Manual page update
+  * Updating guidelines how to package new upstream most effectively
+
+  [ Ian Hunter ]
+  * Fix IAM error "decoding str is not supported" self.iamrole already UTF-8
+    string (Closes: #1058918)
+
+  [ andraxin ]
+  * Update s3
+
+ -- Marcin Kulisz <debian@kulisz.net>  Mon, 07 Oct 2024 22:09:29 +0100
+
 apt-transport-s3 (2.1.0-1) unstable; urgency=medium
 
   [ Marcin Kulisz ]
