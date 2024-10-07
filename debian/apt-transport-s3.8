@@ -1,5 +1,5 @@
 .\" (C) Copyright 2014 Marcin Kulisz (kuLa) <marcin@bashton.com>,
-.TH APT-TRANSPORT-S3 8 "August 14, 2014"
+.TH APT-TRANSPORT-S3 8 "October 7, 2024"
 .SH NAME
 .SH DESCRIPTION
 apt-transport-s3 \- it's a package which contains apt transport ('plugin')
@@ -20,21 +20,91 @@ reflected in at least one of below two places.
 default place where S3 transport is looking for credentials allowing for
 fetching files from S3 bucket
 
-.B /etc/apt/s3auth.conf
-credentials configuration file in ini format without section headers
-
-.SH URI format
-URI format is in standard apt format only difference with S3 transport is that
-instead of HTTP(s), cdrom or FTP protocol
-.B s3
-should be used
-.br
-ex.
-.IR "deb [trusted=yes] s3://bucket_name/ testing main contrib non-free"
-
+.SH Configuration
 .PP
-.SH EXAMPLE /etc/apt/s3auth.conf
- AccessKeyId = myaccesskey
- SecretAccessKey = mysecrectkey
- Region = eu-west-1
- Endpoint = 'nyc3.digitaloceanspaces.com'
+/etc/apt/s3auth.conf or IAM
+role (http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
+can provide credentials required for using private apt repositories.
+.PP
+NOTE: Region MUST match the region the buckets are stored in and if not
+defined it will try to fetch it from the metadata service.
+.PP
+Setting Endpoint allows for using providers other than Amazon AWS.
+If set, Endpoint disregards Region.
+.PP
+.SH Example of s3auth.conf file:
+.IP
+.nf
+AccessKeyId     = myaccesskey
+SecretAccessKey = mysecretaccesskey
+Region          = \[aq]us-east-1\[aq]
+Endpoint        = \[aq]nyc3.digitaloceanspaces.com\[aq]
+PathStyle       = True
+\f[R]
+.fi
+.SH Minimal IAM policy for accessing repository
+.IP
+.nf
+{
+    \[dq]Version\[dq]: \[dq]2012-10-17\[dq],
+    \[dq]Statement\[dq]: [
+        {
+            \[dq]Sid\[dq]: \[dq]VisualEditor0\[dq],
+            \[dq]Effect\[dq]: \[dq]Allow\[dq],
+            \[dq]Action\[dq]: [
+                \[dq]s3:GetObject\[dq],
+                \[dq]s3:ListBucket\[dq]
+            ],
+            \[dq]Resource\[dq]: [
+                \[dq]arn:aws:s3:::[BUCKET_ID]/*\[dq],
+                \[dq]arn:aws:s3:::[BUCKET_ID]\[dq]
+            ]
+        }
+    ]
+}
+\f[R]
+.fi
+.SH Usage
+.PP
+Install the .deb package from the releases page.
+The bucket repo should be specified using an s3:// prefix, for example:
+.PP
+deb s3://aptbucketname/repo/ trusty main contrib non-free
+.PP
+if you need to use a proxy to connect to the internet you can specify
+this as an APT configuration directive (for example in
+/etc/apt/apt.conf.d/90apt-transport-s3)
+.PP
+Acquire::http::Proxy \[dq]http://myproxy:3128/\[dq];
+.PP
+Bucket name hosting repo can not contain dots in it\[cq]s name as this
+(according to AWS S3 naming
+convention (https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html))
+will invalidate virtual host style paths TLS certificates.
+.SS Testing
+.PP
+The module will run in interactive mode.
+It accepts on stdin and outputs on stdout.
+The messages it accepts on stdin are in the following format and
+documented
+here (http://www.fifi.org/doc/libapt-pkg-doc/method.html/index.html#abstract).
+.IP
+.nf
+
+600 URI Acquire
+URI:s3://my-s3-repository/project-a/dists/trusty/main/binary-amd64/Packages
+Filename:Packages.downloaded
+Fail-Ignore:true
+Index-File:true
+\f[R]
+.fi
+.PP
+This message will trigger an s3 get from the above bucket and key and
+save it to Filename.
+It needs a blank line after the message to trigger the processing by the
+s3 method.
+.SH Contribution
+.PP
+If you want to contribute a patch via PR please create it against
+development branch.
+Patches via email are welcome as well.
