@@ -225,7 +225,7 @@ cause is that you don't have IAM role on this machine")
         If in the config is not a boolean but some rubish throw a type error.
         """
         # getting path style from config file
-        path_style = config.get('PathStyle')
+        path_style = config.as_bool('PathStyle')
 
         if not isinstance(path_style, bool):
             raise TypeError("PathStyle must be a boolean value")
@@ -257,6 +257,7 @@ cause is that you don't have IAM role on this machine")
 
         self.region = self.__get_region(data)
         self.host = self.__get_endpoint(data)
+        self.path_style = self.__get_path_style(data)
 
         if data.get("AccessKeyId") is None:
             self.__get_role()
