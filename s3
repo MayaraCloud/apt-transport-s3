@@ -18,19 +18,20 @@
 #
 # https://github.com/MayaraCloud/apt-transport-s3
 
-import urllib.request
-import urllib.error
-import urllib.parse
-import time
 import hashlib
 import hmac
 import json
-import sys
 import os
-import datetime
-import xml.etree.ElementTree as ET
 import socket
 import ssl
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+
 from configobj import ConfigObj
 
 RETRIES = 5
@@ -352,7 +353,7 @@ cause is that you don't have IAM role on this machine")
         request.add_header('x-amz-content-sha256', self._payload_hash(request))
 
         # Create a date for headers and the credential string
-        amzdate = datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+        amzdate = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
 
         request.add_header('x-amz-date', amzdate)
 
