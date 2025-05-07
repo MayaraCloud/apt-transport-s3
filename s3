@@ -69,6 +69,17 @@ class AWSCredentials(object):
                                                       path_instance_metadata)
         self.session_token = None
         self.path_style = False
+        # We'll cache the region for every bucket we see
+        self.bucket_regions=dict()
+        self.default_region = None
+        self.default_endpoint = None
+
+    def __get_region_for_bucket(self, bucket):
+        if bucket in self.bucket_regions:
+            return self.bucket_regions[bucket]
+        self.bucket_regions[bucket] = self.default_region
+        return self.default_region
+
 
     def __imdsv2_ensure_token(self):
         # Get IMDSv2 session token
@@ -200,7 +211,7 @@ cause is that you don't have IAM role on this machine")
 
         return region
 
-    def __get_endpoint(self, config):
+    def __get_endpoint_for_region(self, region):
         """ We assume that if endpoint attribute exists in the config this
         takes priority over Region and bucket URL construction. If it doesn't
         exist checking Region and comparing it to the dict containing special
@@ -209,13 +220,13 @@ cause is that you don't have IAM role on this machine")
         instance metadata (if bucket and host are in the same region it will
         work, if not error will be thrown)
         """
-        if config.get('Endpoint') is not None:
-            host = config['Endpoint']
+        if self.default_endpoint is not None:
+            return self.default_endpoint
+
+        if region in list(SPECIAL_REGION_ENDPOINTS.keys()):
+            host = SPECIAL_REGION_ENDPOINTS[region]
         else:
-            if self.region in list(SPECIAL_REGION_ENDPOINTS.keys()):
-                host = SPECIAL_REGION_ENDPOINTS[self.region]
-            else:
-                host = 's3.{}.amazonaws.com'.format(self.region)
+            host = 's3.{}.amazonaws.com'.format(region)
 
         return host
 
@@ -259,8 +270,8 @@ cause is that you don't have IAM role on this machine")
         if data.get("Region") is None:
             data['Region'] = os.environ.get("AWS_REGION")
 
-        self.region = self.__get_region(data)
-        self.host = self.__get_endpoint(data)
+        self.default_region = self.__get_region(data)
+        self.default_endpoint = data.get("Endpoint")
         self.path_style = self.__get_path_style(data)
 
         if data.get("AccessKeyId") is None:
@@ -282,43 +293,54 @@ cause is that you don't have IAM role on this machine")
     def v4Sign(self, key, msg):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
 
-    def getSignatureKey(self, dateStamp, serviceName):
+    def getSignatureKey(self, dateStamp, serviceName, region):
         kDate = self.v4Sign(
             ('AWS4' + self.secret_key).encode('utf-8'), dateStamp)
-        kRegion = self.v4Sign(kDate, self.region)
+        kRegion = self.v4Sign(kDate, region)
         kService = self.v4Sign(kRegion, serviceName)
         kSigning = self.v4Sign(kService, 'aws4_request')
         return kSigning
 
     def uriopen(self, uri):
         """uriopen(uri) open the remote file and return a file object."""
-        try:
-            return urllib.request.urlopen(self._request(uri), None, 30)
-        except urllib.error.HTTPError as e:
-            # HTTPError is a "file like object" similar to what
-            # urllib.request.urlopen returns, so return it and let caller
-            # deal with the error code
-            if e.code == 400:
-                # token errors are buried in 400 messages so expose
-                xmlResponse = ET.fromstring(e.read())
-                if xmlResponse is not None:
-                    e.msg = "{} - {}".format(e,
-                                             xmlResponse.find("Message").text)
-            if e.code == 301:
-                e.msg = f"{e} - Set s3auth.conf region to match bucket \
-'Region': bucket may not be in {self.region}"
+        region = None
+        for attempt in range(RETRIES, 0, -1):
+            try:
+                return urllib.request.urlopen(self._request(uri, region), None, 30)
+            except urllib.error.HTTPError as e:
+                # HTTPError is a "file like object" similar to what
+                # urllib.request.urlopen returns, so return it and let caller
+                # deal with the error code
+                if e.code == 400:
+                    # token errors are buried in 400 messages so expose
+                    xmlResponse = ET.fromstring(e.read())
+                    if xmlResponse is not None:
+                        e.msg = "{} - {}".format(e,
+                                                xmlResponse.find("Message").text)
+                if e.code == 301:
+                    new_region = e.headers.get("x-amz-bucket-region")
+                    if attempt > 1:
+                        if new_region is not None or new_region :
+                            region = new_region
+                            e.close()
+                            continue
+                    e.msg = f"{e} - Set s3auth.conf region to match bucket: {new_region or "unknown"}"
 
+                return e
+            # For other errors, throw an exception directly
+            except urllib.error.URLError as e:
+                if hasattr(e, 'reason'):
+                    raise Exception(f"URL error reason: gc {e.reason}")
+                elif hasattr(e, 'code'):
+                    raise Exception(f"Server error code: gc {e.code}")
+            except socket.timeout:
+                raise Exception("Socket timeout")
+        else:
             return e
-        # For other errors, throw an exception directly
-        except urllib.error.URLError as e:
-            if hasattr(e, 'reason'):
-                raise Exception(f"URL error reason: gc {e.reason}")
-            elif hasattr(e, 'code'):
-                raise Exception(f"Server error code: gc {e.code}")
-        except socket.timeout:
-            raise Exception("Socket timeout")
 
-    def _request(self, uri):
+
+
+    def _request(self, uri, new_region=None):
         uri_parsed = urllib.parse.urlparse(uri)
         # Below if statement is to accommodate AWS guidance in regards buckets
         # naming convention presented in
@@ -331,13 +353,19 @@ cause is that you don't have IAM role on this machine")
 
         scheme = 'https'
         bucket = uri_parsed.netloc
+        if new_region is None:
+            region = self.__get_region_for_bucket(bucket)
+        else:
+            self.bucket_regions[bucket] = new_region
+            region = new_region
+        host = self.__get_endpoint_for_region(region)
         if self.path_style:
-            host = '{}'.format(self.host)
+            host = '{}'.format(host)
             path = '/{}{}'.format(bucket, urllib.parse.quote(
                 uri_parsed.path,
                 safe='-._~/'))
         else:
-            host = '{}.{}'.format(bucket, self.host)
+            host = '{}.{}'.format(bucket, host)
             path = '{}'.format(urllib.parse.quote(
                 uri_parsed.path,
                 safe='-._~/'))
@@ -369,13 +397,14 @@ cause is that you don't have IAM role on this machine")
 
         authorization_header = self._authorization_header(
             canonical_request,
-            amzdate)
+            amzdate,
+            region)
 
         request.add_header('Authorization', authorization_header)
 
         return request
 
-    def _authorization_header(self, canonical_request, amzdate):
+    def _authorization_header(self, canonical_request, amzdate, region):
         """
         AWS documentation for signing requests with v4Sign:
             https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html
@@ -383,14 +412,14 @@ cause is that you don't have IAM role on this machine")
         datestamp = amzdate.split('T')[0]
 
         algorithm = 'AWS4-HMAC-SHA256'
-        credential_scope = datestamp + '/' + self.region + '/s3/aws4_request'
+        credential_scope = datestamp + '/' + region + '/s3/aws4_request'
 
         string_to_sign = algorithm + '\n' \
             + amzdate + '\n' \
             + credential_scope + '\n' \
             + canonical_request
 
-        signing_key = self.getSignatureKey(datestamp, 's3')
+        signing_key = self.getSignatureKey(datestamp, 's3', region)
         signature = hmac.new(signing_key,
                              string_to_sign.encode('utf-8'),
                              hashlib.sha256).hexdigest()
