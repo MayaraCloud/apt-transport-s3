@@ -290,10 +290,11 @@ cause is that you don't have IAM role on this machine")
         kSigning = self.v4Sign(kService, 'aws4_request')
         return kSigning
 
-    def uriopen(self, uri):
+    def uriopen(self, uri, resumeFile=None):
         """uriopen(uri) open the remote file and return a file object."""
         try:
-            return urllib.request.urlopen(self._request(uri), None, 30)
+            return urllib.request.urlopen(self._request(uri, resumeFile),
+                                          None, 30)
         except urllib.error.HTTPError as e:
             # HTTPError is a "file like object" similar to what
             # urllib.request.urlopen returns, so return it and let caller
@@ -318,7 +319,7 @@ cause is that you don't have IAM role on this machine")
         except socket.timeout:
             raise Exception("Socket timeout")
 
-    def _request(self, uri):
+    def _request(self, uri, resumeFile=None):
         uri_parsed = urllib.parse.urlparse(uri)
         # Below if statement is to accommodate AWS guidance in regards buckets
         # naming convention presented in
@@ -354,6 +355,10 @@ cause is that you don't have IAM role on this machine")
         )
 
         request = urllib.request.Request(s3url)
+
+        if resumeFile and os.path.exists(resumeFile):
+            resumeSize = os.path.getsize(resumeFile)
+            request.add_header('Range', 'bytes=%d-' % resumeSize)
 
         request.add_header('x-amz-content-sha256', self._payload_hash(request))
 
@@ -592,7 +597,7 @@ class S3_method(object):
         self.send_status({'URI': self.uri, 'Message': 'Waiting for headers'})
         for i in range(0, RETRIES):
             try:
-                response = self.iam.uriopen(self.uri)
+                response = self.iam.uriopen(self.uri, resumeFile=self.filename)
             except ssl.SSLError as e:
                 if 'timed out' in e.message:
                     time.sleep(wait_time(i + 1))
@@ -607,7 +612,8 @@ class S3_method(object):
                 'URI': self.uri,
                 'Message': 'Waiting for headers'})
 
-            if response.code != 200:
+            # 206 = Partial Content, we now support resume
+            if response.code != 200 and response.code != 206:
                 error_detail = self.format_error_response(response)
                 self.send_uri_failure({
                     'URI': self.uri,
@@ -632,15 +638,34 @@ class S3_method(object):
 
                 return
 
+            if response.code == 206:
+                partialFileSize = os.path.getsize(self.filename)
+                partialcontentlen = int(response.headers.get('content-length'))
+                contentlength = str(partialFileSize + partialcontentlen)
+            else:
+                contentlength = response.headers.get('content-length')
+
             self.send_uri_start({
                 'URI': self.uri,
-                'Size': response.headers.get('content-length'),
+                'Size': contentlength,
                 'Last-Modified': response.headers.get('last-modified')})
 
-            f = open(self.filename, "wb")
             hash_sha256 = hashlib.sha256()
             hash_sha512 = hashlib.sha512()
             hash_md5 = hashlib.md5()
+            # read partial file to get the running hash
+            if response.code == 206:
+                with open(self.filename, 'rb') as partialFile:
+                    while True:
+                        data = partialFile.read(4096)
+                        if not len(data):
+                            break
+                        hash_sha256.update(data)
+                        hash_sha512.update(data)
+                        hash_md5.update(data)
+                f = open(self.filename, "ab")
+            else:
+                f = open(self.filename, "wb")
             try:
                 while True:
                     data = response.read(4096)
@@ -669,7 +694,7 @@ class S3_method(object):
         self.send_uri_done({
             'URI': self.uri,
             'Filename': self.filename,
-            'Size': response.headers.get('content-length'),
+            'Size': contentlength,
             'Last-Modified': response.headers.get('last-modified'),
             'MD5-Hash': hash_md5.hexdigest(),
             'MD5Sum-Hash': hash_md5.hexdigest(),
