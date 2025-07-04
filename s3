@@ -22,6 +22,7 @@ import hashlib
 import hmac
 import json
 import os
+import signal
 import socket
 import ssl
 import sys
@@ -678,6 +679,7 @@ class S3_method(object):
 
 
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, lambda *_: os._exit(128 + signal.SIGINT))  # Exit cleanly if SIGINTed by APT
     try:
         config = '/etc/apt/s3auth.conf'
         if len(sys.argv) == 2 and os.path.isfile(sys.argv[1]):
