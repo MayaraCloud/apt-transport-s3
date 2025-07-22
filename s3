@@ -34,6 +34,11 @@ from datetime import datetime, timezone
 
 from configobj import ConfigObj
 
+try:
+    import botocore.session
+except ImportError:
+    botocore = None
+
 RETRIES = 5
 
 SPECIAL_REGION_ENDPOINTS = {
@@ -155,6 +160,48 @@ cause is that you don't have IAM role on this machine")
         else:
             raise Exception(f"Config file: {self.conf_file} doesn't exist")
 
+    def __get_credentials(self, config: dict[str, str]) -> tuple[str, str, str]:
+        """
+        Determine credentials based on s3auth.conf, environment variables, default aws mechanism (if botocore is installed)
+        or iam role.
+        :param config: content of s3auth.conf
+        :return: access key id, secret access key and token
+        :raises Exception: when not access key id or secret access key could be determined
+        """
+        access_key_id = config.get("AccessKeyId")
+        secret_access_key = config.get("SecretAccessKey")
+        token = config.get("Token")
+
+        if access_key_id is None or secret_access_key is None:
+            # try to get credentials from environment variables
+            access_key_id = os.environ.get("AWS_ACCESS_KEY_ID")
+            secret_access_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+            token = os.environ.get("AWS_SESSION_TOKEN")
+
+        if (access_key_id is None  or secret_access_key is None) and botocore is not None:
+            # try to get credentials from aws credentials file
+            session = botocore.session.get_session()
+            session.set_config_variable('profile', os.environ.get("AWS_PROFILE", "default"))
+            credentials = session.get_credentials()
+            if credentials:
+                access_key_id = credentials.access_key
+                secret_access_key = credentials.secret_key
+                token = credentials.token
+
+        if access_key_id is None or secret_access_key is None:
+            self.__get_role()
+            data = self.__request_json(urllib.parse.urljoin(
+                self.credentials_metadata,
+                self.iamrole))
+            access_key_id = data.get("AccessKeyId")
+            secret_access_key = data.get("SecretAccessKey")
+            token = data.get("Token")
+
+        if access_key_id is None or secret_access_key is None:
+            raise Exception("Either access key id or secret access key is not set")
+
+        return access_key_id, secret_access_key, token
+
     def __request_json(self, url):
         if not self.session_token:
             self.__imdsv2_ensure_token()
@@ -189,11 +236,22 @@ cause is that you don't have IAM role on this machine")
 
     def __get_region(self, config):
         """ We need to know in which region bucket with the repository is, thus
-        this fucntion is going to load it from the config file or instance
+        this function is going to load it from the config file or instance
         metadata
         """
         # try to load region from config file
         region = config.get('Region')
+
+        if region is None or region == '':
+            # try to get region from environment variable
+            region = os.environ.get("AWS_REGION")
+
+        if region is None or region == '' and botocore is not None:
+            # try to get region from aws config
+            session = botocore.session.get_session()
+            session.set_config_variable('profile', os.environ.get("AWS_PROFILE", "default"))
+            region = session.get_config_variable('region')
+
         # if region is not defied load it from instance metadata
         if region is None or region == '':
             region = self.__request_json(self.instance_metadata)['region']
@@ -249,35 +307,10 @@ cause is that you don't have IAM role on this machine")
         except Exception:
             pass
 
-        # Setting up AWS creds based on environment variables if env vars
-        # doesn't exist setting var value to None
-        if data.get("AccessKeyId") is None:
-            data['AccessKeyId'] = os.environ.get("AWS_ACCESS_KEY_ID")
-            data['SecretAccessKey'] = os.environ.get("AWS_SECRET_ACCESS_KEY")
-            data['Token'] = os.environ.get("AWS_SESSION_TOKEN")
-
-        if data.get("Region") is None:
-            data['Region'] = os.environ.get("AWS_REGION")
-
+        self.access_key, self.secret_key, self.token = self.__get_credentials(data)
         self.region = self.__get_region(data)
         self.host = self.__get_endpoint(data)
         self.path_style = self.__get_path_style(data)
-
-        if data.get("AccessKeyId") is None:
-            self.__get_role()
-            data = self.__request_json(urllib.parse.urljoin(
-                self.credentials_metadata,
-                self.iamrole))
-
-        self.access_key = data['AccessKeyId']
-        if self.access_key is None or self.access_key == '':
-            raise Exception("AccessKeyId required")
-
-        self.secret_key = data['SecretAccessKey']
-        if self.secret_key is None or self.secret_key == '':
-            raise Exception("SecretAccessKey required")
-
-        self.token = data.get('Token')
 
     def v4Sign(self, key, msg):
         return hmac.new(key, msg.encode('utf-8'), hashlib.sha256).digest()
@@ -305,7 +338,7 @@ cause is that you don't have IAM role on this machine")
                     e.msg = "{} - {}".format(e,
                                              xmlResponse.find("Message").text)
             if e.code == 301:
-                e.msg = f"{e} - Set s3auth.conf region to match bucket \
+                e.msg = f"{e} - Set region to match bucket \
 'Region': bucket may not be in {self.region}"
 
             return e
