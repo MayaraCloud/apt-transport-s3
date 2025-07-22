@@ -3,7 +3,8 @@
 Allow to have a privately hosted apt repository on S3. Access keys are read from
 `/etc/apt/s3auth.conf` file or IAM role if machine is hosted on AWS or has
 access to AWS metadata server on 169.254.169.254.  They are also taken from the
-usual environment variables.
+usual environment variables. If no mechanism worked, botocore is used to determine
+credentials, e.g. from aws credentials file `~/.aws/credentials`.
 
 [License and Copyright]: #license--copyright
 [Requirements]: #requirements
@@ -46,12 +47,23 @@ usual environment variables.
 ### Additional package dependencies (except installed by default in Debian)
 
 1. python-configobj
+2. python3-botocore (optional)
 
 ## Configuration
 
-/etc/apt/s3auth.conf or
-[IAM role](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html)
-can provide credentials required for using private apt repositories.
+To determine the aws credentials, apt-transport-s3 uses the following sources:
+
+1. `/etc/apt/s3auth.conf`
+2. [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials) (if botocore is installed) \
+The profile name to use can be set using the environment variable `AWS_PROFILE` (defaults to `default`).
+3. [IAM role](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-roles-for-amazon-ec2.html) (even if botocore is not installed)
+
+To determine the aws region, apt-transport-s3 uses the following sources:
+
+1. `/etc/apt/s3auth.conf`
+2. Environment Variable `REGION`
+3. [Boto](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials) (if botocore is installed) \
+The profile name to use can be set using the environment variable `AWS_PROFILE` (defaults to `default`).
 
 NOTE: Region MUST match the region the buckets are stored in and if not defined
 it will try to fetch it from the metadata service.
@@ -66,6 +78,22 @@ SecretAccessKey = mysecretaccesskey
 Region          = 'us-east-1'
 Endpoint        = 'nyc3.digitaloceanspaces.com'
 PathStyle       = True
+```
+
+Example of `~/.aws/credentials` file (alternative to setting credentials in `s3auth.conf`):
+
+```text
+[default]
+aws_access_key_id=myaccesskey
+aws_secret_access_key=mysecretaccesskey
+aws_session_token=mysessiontoken
+```
+
+Example of `~/.aws/config` file (alternative to setting region in `s3auth.conf`):
+
+```text
+[default]
+region=us-east-1
 ```
 
 ### Minimal IAM policy for accessing repository
